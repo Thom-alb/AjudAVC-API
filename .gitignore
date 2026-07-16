@@ -1,0 +1,39 @@
+# =========================================================================
+# Java & Build Tools (Maven)
+# =========================================================================
+# Pasta onde o Maven coloca os arquivos compilados e o .jar final
+target/
+*.class
+
+# Arquivos temporários de log do Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.nextVal
+pom.xml.backup
+release.properties
+
+# =========================================================================
+# IDEs & Editors (VS Code / IntelliJ)
+# =========================================================================
+.vscode/
+.idea/
+*.iml
+*.iws
+.settings/
+.classpath
+.project
+.factorypath
+
+# =========================================================================
+# Operating System (Windows)
+# =========================================================================
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# =========================================================================
+# Frontend / Node.js & Environment
+# =========================================================================
+node_modules/
+.env
+.env.local
