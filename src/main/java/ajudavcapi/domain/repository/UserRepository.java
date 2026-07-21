@@ -9,4 +9,8 @@ import ajudavcapi.domain.entity.User;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
+    Optional<User> findByName(String name);
+    Optional<User> findByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCase(String name);
+
 }
