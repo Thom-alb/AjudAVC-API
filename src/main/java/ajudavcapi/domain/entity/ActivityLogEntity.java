@@ -23,7 +23,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class ActivityLog {
+public class ActivityLogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,12 +32,12 @@ public class ActivityLog {
     // A atividade acontece dentro do contexto de um Grupo específico
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
-    private Group group;
+    private GroupEntity group;
 
     // O usuário/cuidador que criou ou realizou a atividade
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private UserEntity user;
 
     @Column(name = "title", nullable = false)
     private String title; // Ex: "Medicação - Losartana 50mg", "Banho de Leito"

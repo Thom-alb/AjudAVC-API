@@ -23,7 +23,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class CalendarEvent {
+public class CalendarEventEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,12 +32,12 @@ public class CalendarEvent {
     // O evento pertence ao calendário de um grupo específico
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
-    private Group group;
+    private GroupEntity group;
 
     // Vincula o evento do calendário à sua atividade de origem no log
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_log_id", nullable = false)
-    private ActivityLog activityLog;
+    private ActivityLogEntity activityLog;
 
     // Cópia do título para busca direta
     @Column(name = "title", nullable = false)

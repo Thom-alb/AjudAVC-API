@@ -19,7 +19,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ajudavcapi.domain.enums.GroupRole;
 
 @Entity
 @Table(name = "group_members")
@@ -28,7 +27,7 @@ import ajudavcapi.domain.enums.GroupRole;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class GroupMember {
+public class GroupMemberEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,12 +36,12 @@ public class GroupMember {
     // Grupo o qual o membro pertencem
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
-    private Group group;
+    private GroupEntity group;
 
     // O usuario que é membro do grupo
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private UserEntity user;
 
     // Função do membro
     @Enumerated(EnumType.STRING)

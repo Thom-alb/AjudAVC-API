@@ -23,7 +23,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class MonthlySummary {
+public class MonthlySummaryEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +32,7 @@ public class MonthlySummary {
     // O resumo pertence a um grupo/paciente específico
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
-    private Group group;
+    private GroupEntity group;
 
     // Identificadores do período do resumo
     @Column(name = "month", nullable = false)

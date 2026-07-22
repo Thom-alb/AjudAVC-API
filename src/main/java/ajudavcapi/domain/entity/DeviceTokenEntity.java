@@ -1,6 +1,6 @@
 package ajudavcapi.domain.entity;
 
-public class DeviceToken {
+public class DeviceTokenEntity {
 
     
 }

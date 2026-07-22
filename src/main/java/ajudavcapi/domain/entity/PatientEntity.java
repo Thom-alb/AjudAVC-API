@@ -24,7 +24,7 @@ import ajudavcapi.domain.enums.StrokeType;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class Patient {
+public class PatientEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,7 +46,7 @@ public class Patient {
 
     // Ligação do paciente para o grupo, 1 paciente por 1 grupo
     @OneToOne(mappedBy = "patient")
-    private Group group;
+    private GroupEntity group;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -28,7 +28,7 @@ import ajudavcapi.domain.enums.MoodState;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class WeeklyProgress {
+public class WeeklyProgressEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,12 +37,12 @@ public class WeeklyProgress {
     // O registro de progresso pertence a um grupo específico
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
-    private Group group;
+    private GroupEntity group;
 
     // O cuidador/usuário que realizou esta avaliação de progresso
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private UserEntity user;
 
     // Sliders de avaliação de 1 a 10 demonstrados no layout da tela
     @Min(1) @Max(10)
