@@ -35,10 +35,10 @@ public class MonthlySummaryEntity {
     private GroupEntity group;
 
     // Identificadores do período do resumo
-    @Column(name = "month", nullable = false)
+    @Column(name = "summary_month", nullable = false)
     private Integer month; // Ex: 7 para Julho
 
-    @Column(name = "year", nullable = false)
+    @Column(name = "summary_year", nullable = false)
     private Integer year;  // Ex: 2026
 
     // Médias aritméticas dos sliders calculadas no período

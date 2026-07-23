@@ -9,6 +9,4 @@ import ajudavcapi.domain.entity.UserEntity;
 
 @Repository
 public interface DeviceTokenRepository extends JpaRepository<DeviceTokenEntity, Long> {
-    List<DeviceTokenEntity> findByUser(UserEntity user);
-    Optional<DeviceTokenEntity> findByToken(String token);
 }
