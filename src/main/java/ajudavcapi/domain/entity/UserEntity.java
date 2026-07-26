@@ -42,6 +42,8 @@ public class UserEntity implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String login;
+    
     @NotBlank(message = "O nome é obrigatório")
     @Column(name = "name", nullable = false)
     private String name;
@@ -60,6 +62,12 @@ public class UserEntity implements UserDetails {
     @Column(name = "role", nullable = false)
     private GroupRole role = GroupRole.MEMBER; // Todo usuário nasce como MEMBER por padrão
 
+    //Construtor para autenticação valida
+    public User(String login, String password, GrouRole role){
+        this.login = login;
+        this.password = password;
+        this.role = role;
+    }
     @OneToMany(mappedBy = "user")
     private List<ActivityLogEntity> activities = new ArrayList<>();
 

@@ -2,6 +2,7 @@ package ajudavcapi.domain.repository;
 
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Repository;
 import ajudavcapi.domain.entity.UserEntity;
 
@@ -12,5 +13,5 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByName(String name);
     Optional<UserEntity> findByNameIgnoreCase(String name);
     boolean existsByNameIgnoreCase(String name);
-
+    UserDetails findByLogin(String login);
 }
