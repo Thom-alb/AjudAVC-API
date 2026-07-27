@@ -4,7 +4,7 @@ import ajudavcapi.domain.enums.GroupRole;
 import jakarta.validation.constraints.NotBlank;
 
 public record RegisterDTO(
-    @NotBlank String login,
+    @NotBlank String email,
     @NotBlank String password,
     @NotBlank GroupRole role
 ) {

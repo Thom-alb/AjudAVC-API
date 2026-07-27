@@ -1,5 +1,6 @@
 package ajudavcapi.domain.dto.user;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -8,6 +9,7 @@ public record UserRequestDTO(
     @NotBlank(message = "O nome é obrigatório")
     String name,
 
+    @Email (message = "E-mail inválido")
     @NotBlank(message = "O e-mail é obrigatório")
     String email,
 

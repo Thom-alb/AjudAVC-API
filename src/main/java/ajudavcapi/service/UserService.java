@@ -3,6 +3,7 @@ package ajudavcapi.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import ajudavcapi.domain.dto.user.UserRequestDTO;
@@ -11,9 +12,12 @@ import ajudavcapi.domain.repository.UserRepository;
 
 @Service
 public class UserService {
-    
+
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public List<UserEntity> listarUsuarios() {
         return userRepository.findAll();
@@ -21,7 +25,7 @@ public class UserService {
 
     public UserEntity buscarPorId(Long id) {
         return userRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado para o ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado para o ID: " + id));
     }
 
     public UserEntity adicionarUsuario(UserRequestDTO user) {
@@ -32,7 +36,7 @@ public class UserService {
         UserEntity u = new UserEntity();
         u.setName(user.name());
         u.setEmail(user.email());
-        u.setPassword(user.password());
+        u.setPassword(passwordEncoder.encode(user.password())); 
 
         return userRepository.save(u);
     }
@@ -46,7 +50,7 @@ public class UserService {
 
         user.setName(dto.name());
         user.setEmail(dto.email());
-        user.setPassword(dto.password());
+        user.setPassword(passwordEncoder.encode(dto.password())); 
 
         return userRepository.save(user);
     }

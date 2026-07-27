@@ -42,8 +42,6 @@ public class UserEntity implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String login;
-    
     @NotBlank(message = "O nome é obrigatório")
     @Column(name = "name", nullable = false)
     private String name;
@@ -60,14 +58,14 @@ public class UserEntity implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private GroupRole role = GroupRole.MEMBER; // Todo usuário nasce como MEMBER por padrão
+    private GroupRole role = GroupRole.MEMBER; 
 
-    //Construtor para autenticação valida
-    public User(String login, String password, GrouRole role){
-        this.login = login;
+    public UserEntity(String name, String email, String password, GroupRole role){
+        this.email = email;
         this.password = password;
         this.role = role;
     }
+
     @OneToMany(mappedBy = "user")
     private List<ActivityLogEntity> activities = new ArrayList<>();
 
@@ -83,13 +81,15 @@ public class UserEntity implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if(this.role == GroupRole.LEADER) return List.of(new SimpleGrantedAuthority("ROLE_LEADER"), new SimpleGrantedAuthority("ROLE_MEMBER"));
-        else return List.of(new SimpleGrantedAuthority("ROLE_MEMBER"));
+        if(this.role == GroupRole.LEADER) {
+            return List.of(new SimpleGrantedAuthority("ROLE_LEADER"), new SimpleGrantedAuthority("ROLE_MEMBER"));
+        }
+        return List.of(new SimpleGrantedAuthority("ROLE_MEMBER"));
     }
 
     @Override
     public String getUsername() {
-        return this.email;
+        return this.email; 
     }
 
     @Override

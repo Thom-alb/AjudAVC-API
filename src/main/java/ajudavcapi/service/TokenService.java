@@ -12,7 +12,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 
-import ajudavcapi.domain.entity.UserEntity; // Certifique-se de que a importação reflete o nome da sua Entidade de Usuário
+import ajudavcapi.domain.entity.UserEntity;
 
 @Service
 public class TokenService {
