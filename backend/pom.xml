@@ -12,10 +12,10 @@
 	</parent>
 
 	<groupId>ajudavcapi</groupId>
-	<artifactId>demo</artifactId>
+	<artifactId>ajudavc-api-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name />
-	<description />
+	<name>ajudavc-api-backend</name>
+	<description>Backend do Projeto AjudAVC</description>
 	<url />
 	<licenses>
 		<license />
@@ -130,8 +130,6 @@
 				</configuration>
 			</plugin>
 
-			<!-- AJUSTE REALIZADO: Versão e configurações do plugin movidas para o escopo global do
-			plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
