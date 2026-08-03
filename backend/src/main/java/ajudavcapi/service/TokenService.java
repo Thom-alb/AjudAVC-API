@@ -18,7 +18,7 @@ import ajudavcapi.domain.entity.UserEntity;
 public class TokenService {
 
     // Lê a variável de ambiente que guarda o segredo do token. Se não existir, usa um valor padrão.
-    @Value("${api.security.token.secret:az234sdfh2736hai}")
+    @Value("${api.security.token.secret:bzzba23423hsjakas}")
     private String secret;
 
     public String generateToken(UserEntity user) {
