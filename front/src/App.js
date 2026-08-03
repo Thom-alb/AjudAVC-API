@@ -1,6 +1,11 @@
 import React from 'react';
-import AppStack from './src/routes/AppStack';
+import { NavigationContainer } from '@react-navigation/native';
+import AppNavigator from './navigation/AppNavigator';
 
 export default function App() {
-  return <AppStack />;
-}   
+  return (
+    <NavigationContainer>
+      <AppNavigator />
+    </NavigationContainer>
+  );
+}

@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "groupso")
+@Table(name = "care_groups")
 @Getter
 @Setter
 @NoArgsConstructor

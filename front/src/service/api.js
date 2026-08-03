@@ -1,11 +1,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-// AJUSTE A URL DE ACORDO COM SEU TESTE:
-// 1. Emulador Android: Use 'http://10.0.2.2:8055' (aponta para o localhost do seu PC)
-// 2. Celular Físico (Android/iOS): Use 'http://SEU_IP_LOCAL:8055' (ex: 'http://192.168.1.15:8055')
-// 3. iOS Simulator: Use 'http://localhost:8055'
-const API_URL = 'http://10.0.2.2:8055'; 
+// Pega o IP do Expo em dev ou usa 10.0.2.2 para Emulador Android
+const localhost = Constants.expoConfig?.hostUri?.split(':')[0];
+const API_URL = localhost ? `http://${localhost}:8055` : 'http://10.0.2.2:8055';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -18,7 +17,6 @@ api.interceptors.request.use(
   async (config) => {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -30,4 +28,4 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export default api;   
+export default api;
