@@ -14,9 +14,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -58,13 +61,17 @@ public class UserEntity implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private GroupRole role = GroupRole.MEMBER; 
+    private GroupRole role = GroupRole.MEMBER;
 
-    public UserEntity(String name, String email, String password, GroupRole role){
+    public UserEntity(String name, String email, String password, GroupRole role) {
         this.email = email;
         this.password = password;
         this.role = role;
     }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    private GroupEntity group;
 
     @OneToMany(mappedBy = "user")
     private List<ActivityLogEntity> activities = new ArrayList<>();
@@ -81,7 +88,7 @@ public class UserEntity implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if(this.role == GroupRole.LEADER) {
+        if (this.role == GroupRole.LEADER) {
             return List.of(new SimpleGrantedAuthority("ROLE_LEADER"), new SimpleGrantedAuthority("ROLE_MEMBER"));
         }
         return List.of(new SimpleGrantedAuthority("ROLE_MEMBER"));
@@ -89,7 +96,7 @@ public class UserEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.email; 
+        return this.email;
     }
 
     @Override

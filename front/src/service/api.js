@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 
 // Pega o IP do Expo em dev ou usa 10.0.2.2 para Emulador Android
 const localhost = Constants.expoConfig?.hostUri?.split(':')[0];
-const API_URL = localhost ? `http://${localhost}:8055` : 'http://10.0.2.2:8055';
+const API_URL = `http://localhost:8055`;
 
 const api = axios.create({
   baseURL: API_URL,

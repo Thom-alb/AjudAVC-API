@@ -1,31 +1,57 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
 
 export default function TabOneScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
-    </View>
+      <View style={styles.container}>
+        <Text style={styles.title}>AjudAVC</Text>
+        <Text style={styles.subtitle}>
+          Apoio e acompanhamento para cuidadores e pacientes.
+        </Text>
+  
+        <TouchableOpacity
+          style={styles.buttonPrimary}
+          onPress={() => navigation.navigate('LoginScreen')}
+        >
+          <Text style={styles.buttonTextPrimary}>Ir para Login</Text>
+        </TouchableOpacity>
+      </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#F4F6F9',
   },
   title: {
-    fontSize: 20,
+    fontSize: 36,
     fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 8,
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+  subtitle: {
+    fontSize: 16,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 40,
+  },
+  buttonPrimary: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#2563EB',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonTextPrimary: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

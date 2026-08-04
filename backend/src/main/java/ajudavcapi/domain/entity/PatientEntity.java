@@ -1,6 +1,9 @@
 package ajudavcapi.domain.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import ajudavcapi.domain.enums.StrokeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,7 +18,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ajudavcapi.domain.enums.StrokeType;
 
 @Entity
 @Table(name = "patients")
@@ -33,13 +35,17 @@ public class PatientEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "age", nullable = false)
-    private Integer age;
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
 
     // Enum para definição do tipo de avc
     @Enumerated(EnumType.STRING)
     @Column(name = "stroke_type", nullable = false)
     private StrokeType strokeType;
+
+    // Data em que ocorreu o AVC (importante para calcular o tempo de recuperação)
+    @Column(name = "stroke_date")
+    private LocalDate strokeDate;
 
     @Column(name = "important_description", columnDefinition = "TEXT")
     private String importantDescription;

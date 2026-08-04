@@ -1,6 +1,7 @@
 package ajudavcapi.domain.entity;
 
 import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -29,28 +30,28 @@ public class CalendarEventEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // O evento pertence ao calendário de um grupo específico
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id", nullable = false)
-    private GroupEntity group;
-
-    // Vincula o evento do calendário à sua atividade de origem no log
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "activity_log_id", nullable = false)
-    private ActivityLogEntity activityLog;
-
-    // Cópia do título para busca direta
     @Column(name = "title", nullable = false)
     private String title;
 
-    // A data exata em que o evento vai aparecer no calendário (mês/semana)
-    @Column(name = "event_date", nullable = false)
-    private LocalDateTime eventDate;
+    @Column(name = "description")
+    private String description;
 
-    // Espelho resumido do status (Ex: "Pendente", "Completa", "Cancelada")
-    @Column(name = "status", nullable = false)
-    private String status;
+    @Column(name = "event_date_time", nullable = false)
+    private LocalDateTime eventDateTime;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    @Column(name = "event_category", nullable = false)
+    private String eventCategory;
+
+    @Column(name = "completed", nullable = false)
+    private boolean completed = false;
+
+    // Quem criou o evento (Líder ou Membro da rede)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_user_id", nullable = false)
+    private UserEntity createdBy;
+
+    // Vínculo direto com o Grupo de Cuidado do paciente
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", nullable = false)
+    private GroupEntity group;
 }

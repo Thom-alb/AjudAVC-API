@@ -14,62 +14,63 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import ajudavcapi.domain.dto.calendarEvent.CalendarEventResponseDTO;
+import ajudavcapi.domain.dto.calendarEvent.CreateCalendarEventDTO;
 import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.ActivityLogService;
-import ajudavcapi.domain.dto.activitylog.ActivityLogResponseDTO;
-import ajudavcapi.domain.dto.activitylog.CreateActivityLogDTO;
+import ajudavcapi.service.CalendarEventService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/activity-logs")
-public class ActivityLogController {
+@RequestMapping("/calendar-events")
+public class CalendarEventController {
 
     @Autowired
-    private ActivityLogService activityLogService;
+    private CalendarEventService calendarEventService;
 
+    // Criar um evento na agenda do grupo
     @PostMapping
     @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<ActivityLogResponseDTO> createLog(
-            @RequestBody @Valid CreateActivityLogDTO dto,
+    public ResponseEntity<CalendarEventResponseDTO> createEvent(
+            @RequestBody @Valid CreateCalendarEventDTO dto,
             @AuthenticationPrincipal UserEntity userLogado,
             UriComponentsBuilder uriBuilder) {
 
-        ActivityLogResponseDTO response = activityLogService.createLog(dto, userLogado);
+        CalendarEventResponseDTO response = calendarEventService.createEvent(dto, userLogado);
 
-        URI uri = uriBuilder.path("/activity-logs/{id}").buildAndExpand(response.id()).toUri();
+        URI uri = uriBuilder.path("/calendar-events/{id}").buildAndExpand(response.id()).toUri();
         return ResponseEntity.created(uri).body(response);
     }
 
+    // Listar todos os eventos da agenda do grupo do usuário
     @GetMapping
-    public ResponseEntity<List<ActivityLogResponseDTO>> getGroupLogs(
+    public ResponseEntity<List<CalendarEventResponseDTO>> getGroupEvents(
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        List<ActivityLogResponseDTO> logs = activityLogService.getGroupLogs(userLogado);
-        return ResponseEntity.ok(logs);
+        List<CalendarEventResponseDTO> events = calendarEventService.getGroupEvents(userLogado);
+        return ResponseEntity.ok(events);
     }
 
-    // Altera o status (ex: /activity-logs/1/status?status=COMPLETED)
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<ActivityLogResponseDTO> updateStatus(
+    // Marcar/Desmarcar evento como concluído (ex: medicamento tomado)
+    @PatchMapping("/{id}/toggle")
+    public ResponseEntity<CalendarEventResponseDTO> toggleEventCompletion(
             @PathVariable Long id,
-            @RequestParam String status,
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        ActivityLogResponseDTO response = activityLogService.updateStatus(id, status, userLogado);
+        CalendarEventResponseDTO response = calendarEventService.toggleEventCompletion(id, userLogado);
         return ResponseEntity.ok(response);
     }
 
+    // Deletar um evento (Somente o Líder)
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<Void> deleteLog(
+    @PreAuthorize("hasRole('LEADER')")
+    public ResponseEntity<Void> deleteEvent(
             @PathVariable Long id,
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        activityLogService.deleteLog(id, userLogado);
+        calendarEventService.deleteEvent(id, userLogado);
         return ResponseEntity.noContent().build();
     }
 }

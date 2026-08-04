@@ -9,7 +9,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,57 +18,60 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.ActivityLogService;
-import ajudavcapi.domain.dto.activitylog.ActivityLogResponseDTO;
-import ajudavcapi.domain.dto.activitylog.CreateActivityLogDTO;
+import ajudavcapi.service.MonthlySummaryService;
+import ajudavcapi.domain.dto.monthlySummary.CreateMonthlySummaryDTO;
+import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/activity-logs")
-public class ActivityLogController {
+@RequestMapping("/monthly-summaries")
+public class MonthlySummaryController {
 
     @Autowired
-    private ActivityLogService activityLogService;
+    private MonthlySummaryService monthlySummaryService;
 
+    // Criar ou atualizar resumo mensal
     @PostMapping
     @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<ActivityLogResponseDTO> createLog(
-            @RequestBody @Valid CreateActivityLogDTO dto,
+    public ResponseEntity<MonthlySummaryResponseDTO> createOrUpdateSummary(
+            @RequestBody @Valid CreateMonthlySummaryDTO dto,
             @AuthenticationPrincipal UserEntity userLogado,
             UriComponentsBuilder uriBuilder) {
 
-        ActivityLogResponseDTO response = activityLogService.createLog(dto, userLogado);
+        MonthlySummaryResponseDTO response = monthlySummaryService.createOrUpdateSummary(dto, userLogado);
 
-        URI uri = uriBuilder.path("/activity-logs/{id}").buildAndExpand(response.id()).toUri();
+        URI uri = uriBuilder.path("/monthly-summaries/{id}").buildAndExpand(response.id()).toUri();
         return ResponseEntity.created(uri).body(response);
     }
 
+    // Listar histórico de resumos mensais do grupo
     @GetMapping
-    public ResponseEntity<List<ActivityLogResponseDTO>> getGroupLogs(
+    public ResponseEntity<List<MonthlySummaryResponseDTO>> getGroupSummaries(
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        List<ActivityLogResponseDTO> logs = activityLogService.getGroupLogs(userLogado);
-        return ResponseEntity.ok(logs);
+        List<MonthlySummaryResponseDTO> summaries = monthlySummaryService.getGroupSummaries(userLogado);
+        return ResponseEntity.ok(summaries);
     }
 
-    // Altera o status (ex: /activity-logs/1/status?status=COMPLETED)
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<ActivityLogResponseDTO> updateStatus(
-            @PathVariable Long id,
-            @RequestParam String status,
+    // Buscar resumo específico de um mês e ano (Ex: /monthly-summaries/filter?month=7&year=2026)
+    @GetMapping("/filter")
+    public ResponseEntity<MonthlySummaryResponseDTO> getSummaryByMonthAndYear(
+            @RequestParam Integer month,
+            @RequestParam Integer year,
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        ActivityLogResponseDTO response = activityLogService.updateStatus(id, status, userLogado);
+        MonthlySummaryResponseDTO response = monthlySummaryService.getSummaryByMonthAndYear(month, year, userLogado);
         return ResponseEntity.ok(response);
     }
 
+    // Deletar resumo
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<Void> deleteLog(
+    @PreAuthorize("hasRole('LEADER')")
+    public ResponseEntity<Void> deleteSummary(
             @PathVariable Long id,
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        activityLogService.deleteLog(id, userLogado);
+        monthlySummaryService.deleteSummary(id, userLogado);
         return ResponseEntity.noContent().build();
     }
 }

@@ -37,6 +37,9 @@ public class GroupEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "invite_code", nullable = false, unique = true, length = 6)
+    private String inviteCode;
+
     // Relacionamento de 1 grupo para 1 paceiente
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id", nullable = false, unique = true)
@@ -49,4 +52,12 @@ public class GroupEntity {
 
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupMemberEntity> members = new ArrayList<>();
+
+    public void setInviteCode(String inviteCode) {
+        if (inviteCode != null) {
+            this.inviteCode = inviteCode.toUpperCase().trim();
+        } else {
+            this.inviteCode = null;
+        }
+    }
 }

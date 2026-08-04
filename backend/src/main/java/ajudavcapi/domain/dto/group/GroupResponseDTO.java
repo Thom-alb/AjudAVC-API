@@ -4,5 +4,6 @@ public record GroupResponseDTO(
     Long id,
     String name,
     String inviteCode,
-    Long leaderId
+    Long leaderId,
+    String leaderName
 ) {}
