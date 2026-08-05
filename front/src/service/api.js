@@ -2,9 +2,14 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// Pega o IP do Expo em dev ou usa 10.0.2.2 para Emulador Android
-const localhost = Constants.expoConfig?.hostUri?.split(':')[0];
-const API_URL = `http://localhost:8055`;
+// Pega dinamicamente o IP da máquina onde o servidor/Expo está rodando
+const hostUri = Constants.expoConfig?.hostUri?.split(':')[0];
+
+// Se estiver no Expo Go / dispositivo físico na mesma rede Wi-Fi, usa o IP detectado.
+// Se estiver no emulador Android do Android Studio, faz fallback para 10.0.2.2.
+const localIp = hostUri ? hostUri : '10.0.2.2';
+
+const API_URL = `http://${localIp}:8055`;
 
 const api = axios.create({
   baseURL: API_URL,
