@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 const Styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#B3D8E6', // Cor de fundo azul claro
+    backgroundColor: '#0e1f2c',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 40,
@@ -12,13 +12,12 @@ const Styles = StyleSheet.create({
   logoCard: {
     width: '90%',
     height: '38%',
-    backgroundColor: '#244E70', // Card azul escuro
+    backgroundColor: '#244E70',
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    elevation: 5, // Sombra no Android
-    shadowColor: '#000', // Sombra no iOS
+    elevation: 5, 
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -32,10 +31,9 @@ const Styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  // Botão com tamanho fixo e borda arredondada do seu CSS original
   primaryButton: {
    width: '90%',
-    backgroundColor: '#244E70', // Azul médio dos botões
+    backgroundColor: '#244E70', 
     borderRadius: 25,
     paddingVertical: 14,
     alignItems: 'center',

@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   ActivityIndicator,
   SafeAreaView,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Estilos from '../Estilo/registro';
 import api from '../src/service/api';
 
 export default function RegisterScreen() {
@@ -26,7 +26,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    // 1. Validações básicas
+    // 1. Validações de formulário
     if (!name || !email || !password) {
       Alert.alert('Atenção', 'Preencha todos os campos obrigatórios.');
       return;
@@ -55,7 +55,7 @@ export default function RegisterScreen() {
     setLoading(true);
 
     try {
-      // 2. Envia os dados para o endpoint /auth/register (UserRequestDTO)
+      // 2. Envia os dados para a API Spring Boot (/auth/register)
       await api.post('/auth/register', {
         name,
         email,
@@ -63,7 +63,7 @@ export default function RegisterScreen() {
       });
 
       Alert.alert('Sucesso!', 'Conta criada com sucesso.', [
-        { text: 'OK', onPress: () => router.push('/login') },
+        { text: 'OK', onPress: () => router.replace('/login') },
       ]);
     } catch (error) {
       const menssagemErro =
@@ -75,22 +75,22 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={Estilos.container}>
       <StatusBar barStyle="light-content" backgroundColor="#73A5C6" />
 
-      <View style={styles.card}>
+      <View style={Estilos.card}>
         {/* Botão de Voltar */}
         <TouchableOpacity
-          style={styles.backButton}
+          style={Estilos.backButton}
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
 
-        <Text style={styles.title}>Crie sua conta</Text>
+        <Text style={Estilos.title}>Crie sua conta</Text>
 
         <TextInput
-          style={styles.input}
+          style={Estilos.input}
           placeholder="Nome"
           placeholderTextColor="#A0C1E5"
           value={name}
@@ -98,7 +98,7 @@ export default function RegisterScreen() {
         />
 
         <TextInput
-          style={styles.input}
+          style={Estilos.input}
           placeholder="Email"
           placeholderTextColor="#A0C1E5"
           keyboardType="email-address"
@@ -108,7 +108,7 @@ export default function RegisterScreen() {
         />
 
         <TextInput
-          style={styles.input}
+          style={Estilos.input}
           placeholder="Confirmar Email"
           placeholderTextColor="#A0C1E5"
           keyboardType="email-address"
@@ -118,7 +118,7 @@ export default function RegisterScreen() {
         />
 
         <TextInput
-          style={styles.input}
+          style={Estilos.input}
           placeholder="Senha"
           placeholderTextColor="#A0C1E5"
           secureTextEntry
@@ -127,7 +127,7 @@ export default function RegisterScreen() {
         />
 
         <TextInput
-          style={styles.input}
+          style={Estilos.input}
           placeholder="Confirmar Senha"
           placeholderTextColor="#A0C1E5"
           secureTextEntry
@@ -135,134 +135,55 @@ export default function RegisterScreen() {
           onChangeText={setConfirmPassword}
         />
 
-        {/* Checkbox Termos */}
+        {/* Checkbox de Termos */}
         <TouchableOpacity
-          style={styles.checkboxContainer}
+          style={Estilos.checkboxContainer}
           onPress={() => setTermsAccepted(!termsAccepted)}
         >
-          <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
-            {termsAccepted && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+          <View
+            style={[
+              Estilos.checkbox,
+              termsAccepted && Estilos.checkboxChecked,
+            ]}
+          >
+            {termsAccepted && (
+              <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+            )}
           </View>
-          <Text style={styles.checkboxLabel}>
+          <Text style={Estilos.checkboxLabel}>
             Concordo com termos e condições
           </Text>
         </TouchableOpacity>
 
-        {/* Botão Registrar */}
+        {/* Botão de Registro */}
         <TouchableOpacity
-          style={styles.buttonPrimary}
+          style={Estilos.buttonPrimary}
           onPress={handleRegister}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.buttonText}>Registrar</Text>
+            <Text style={Estilos.buttonText}>Registrar</Text>
           )}
         </TouchableOpacity>
 
-        {/* Link para o Login */}
+        {/* Link para Ir ao Login */}
         <TouchableOpacity
           onPress={() => router.push('/login')}
-          style={styles.linkContainer}
+          style={Estilos.linkContainer}
         >
-          <Text style={styles.linkText}>Já tem conta? entre</Text>
+          <Text style={Estilos.linkText}>Já tem conta? entre</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Botão Sair / Voltar ao Início */}
       <TouchableOpacity
-        style={styles.exitButton}
+        style={Estilos.exitButton}
         onPress={() => router.replace('/')}
       >
-        <Text style={styles.exitButtonText}>Sair</Text>
+        <Text style={Estilos.exitButtonText}>Sair</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#73A5C6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  card: {
-    width: '100%',
-    backgroundColor: '#2E618E',
-    borderRadius: 24,
-    padding: 24,
-    alignItems: 'stretch',
-  },
-  backButton: {
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  input: {
-    height: 44,
-    borderBottomWidth: 1,
-    borderBottomColor: '#6C9BCF',
-    color: '#FFFFFF',
-    fontSize: 15,
-    marginBottom: 14,
-    paddingHorizontal: 4,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-    marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#6FA4E8',
-    borderColor: '#6FA4E8',
-  },
-  checkboxLabel: {
-    color: '#FFFFFF',
-    fontSize: 13,
-  },
-  buttonPrimary: {
-    backgroundColor: '#6FA4E8',
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 12,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  linkContainer: {
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#E0E0E0',
-    fontSize: 13,
-  },
-  exitButton: {
-    marginTop: 20,
-  },
-  exitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-});

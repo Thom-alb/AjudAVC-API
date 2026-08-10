@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, Image, BackHandler, Platform, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import Estilos from "../Estilo"; // Importação corrigida
+import Estilos from "../Estilo/index";
 
 export default function WelcomeScreen() {
   const router = useRouter();

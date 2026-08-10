@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   ActivityIndicator,
   SafeAreaView,
@@ -13,6 +12,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Estilos from "../Estilo/login";
 import api from '../src/service/api';
 
 export default function LoginScreen() {
@@ -56,25 +56,25 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={Estilos.container}>
       <StatusBar barStyle="light-content" backgroundColor="#73A5C6" />
 
       {/* Card Azul Escuro */}
-      <View style={styles.card}>
+      <View style={Estilos.card}>
         {/* Seta Voltar */}
         <TouchableOpacity
-          style={styles.backButton}
+          style={Estilos.backButton}
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
 
         {/* Título */}
-        <Text style={styles.title}>Bem vindo(a)</Text>
+        <Text style={Estilos.title}>Bem vindo(a)</Text>
 
         {/* Campo Email */}
         <TextInput
-          style={styles.input}
+          style={Estilos.input}
           placeholder="Email"
           placeholderTextColor="#A0C1E5"
           keyboardType="email-address"
@@ -85,7 +85,7 @@ export default function LoginScreen() {
 
         {/* Campo Senha */}
         <TextInput
-          style={styles.input}
+          style={Estilos.input}
           placeholder="Senha"
           placeholderTextColor="#A0C1E5"
           secureTextEntry
@@ -95,132 +95,44 @@ export default function LoginScreen() {
 
         {/* Checkbox Lembrar Login */}
         <TouchableOpacity
-          style={styles.checkboxContainer}
+          style={Estilos.checkboxContainer}
           onPress={() => setRememberLogin(!rememberLogin)}
         >
-          <View style={[styles.checkbox, rememberLogin && styles.checkboxChecked]}>
+          <View style={[Estilos.checkbox, rememberLogin && Estilos.checkboxChecked]}>
             {rememberLogin && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
           </View>
-          <Text style={styles.checkboxLabel}>Lembrar Login</Text>
+          <Text style={Estilos.checkboxLabel}>Lembrar Login</Text>
         </TouchableOpacity>
 
         {/* Botão Entrar */}
         <TouchableOpacity
-          style={styles.buttonPrimary}
+          style={Estilos.buttonPrimary}
           onPress={handleLogin}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.buttonText}>Entrar</Text>
+            <Text style={Estilos.buttonText}>Entrar</Text>
           )}
         </TouchableOpacity>
 
         {/* Esqueceu a senha */}
         <TouchableOpacity
-          style={styles.forgotContainer}
+          style={Estilos.forgotContainer}
           onPress={() => Alert.alert('Recuperação', 'Recurso em desenvolvimento.')}
         >
-          <Text style={styles.forgotText}>Esqueceu a senha?</Text>
+          <Text style={Estilos.forgotText}>Esqueceu a senha?</Text>
         </TouchableOpacity>
       </View>
 
       {/* Botão Sair no rodapé */}
       <TouchableOpacity
-        style={styles.exitButton}
+        style={Estilos.exitButton}
         onPress={() => router.replace('/')}
       >
-        <Text style={styles.exitButtonText}>Sair</Text>
+        <Text style={Estilos.exitButtonText}>Sair</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#73A5C6', // Azul do fundo principal
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  card: {
-    width: '100%',
-    backgroundColor: '#2E618E', // Azul do card
-    borderRadius: 24,
-    padding: 24,
-    alignItems: 'stretch',
-  },
-  backButton: {
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  input: {
-    height: 48,
-    borderBottomWidth: 1,
-    borderBottomColor: '#6C9BCF',
-    color: '#FFFFFF',
-    fontSize: 16,
-    marginBottom: 20,
-    paddingHorizontal: 4,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-    marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#6FA4E8',
-    borderColor: '#6FA4E8',
-  },
-  checkboxLabel: {
-    color: '#FFFFFF',
-    fontSize: 14,
-  },
-  buttonPrimary: {
-    backgroundColor: '#6FA4E8',
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 16,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  forgotContainer: {
-    alignItems: 'flex-start',
-    marginTop: 4,
-  },
-  forgotText: {
-    color: '#E0E0E0',
-    fontSize: 13,
-  },
-  exitButton: {
-    marginTop: 32,
-  },
-  exitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-});
