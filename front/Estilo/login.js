@@ -35,6 +35,51 @@ const Styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 4,
   },
+  // --- Estilos para o campo de senha com olho ---
+  passwordContainer: {
+    width: "100%",
+    position: "relative",
+    justifyContent: "center",
+  },
+  inputPassword: {
+    height: 48,
+    borderBottomWidth: 1,
+    borderBottomColor: "#6C9BCF",
+    color: "#FFFFFF",
+    fontSize: 16,
+    marginBottom: 20,
+    paddingHorizontal: 4,
+    paddingRight: 40, // Espaço extra para o ícone não cobrir o texto
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 8,
+    top: 10,
+    padding: 4,
+  },
+  // --- Estilos para o Box de Erro ---
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 107, 107, 0.15)",
+    borderWidth: 1,
+    borderColor: "#FF6B6B",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginBottom: 12,
+    width: "100%",
+  },
+  errorIcon: {
+    marginRight: 8,
+  },
+  errorText: {
+    color: "#FF6B6B",
+    fontSize: 13,
+    fontWeight: "600",
+    flex: 1,
+  },
+  // --- Restante dos componentes ---
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -79,6 +124,19 @@ const Styles = StyleSheet.create({
     color: "#E0E0E0",
     fontSize: 13,
   },
+  registerContainer: {
+    alignItems: "center",
+    marginTop: 20,
+    paddingVertical: 6,
+  },
+  registerText: {
+    color: "#E0E0E0",
+    fontSize: 14,
+  },
+  registerTextBold: {
+    color: "#6FA4E8",
+    fontWeight: "bold",
+  },
   exitButton: {
     marginTop: 32,
   },
@@ -87,4 +145,5 @@ const Styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
 export default Styles;

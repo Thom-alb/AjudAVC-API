@@ -2,6 +2,7 @@ package ajudavcapi.domain.entity;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,25 +34,31 @@ public class GroupEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Nome do grupo
     @Column(name = "name", nullable = false)
     private String name;
 
     @Column(name = "invite_code", nullable = false, unique = true, length = 6)
     private String inviteCode;
 
-    // Relacionamento de 1 grupo para 1 paceiente
-    @OneToOne(fetch = FetchType.LAZY)
+    // Relacionamento de 1 grupo para 1 paciente
+    // Adicionado CascadeType.PERSIST e CascadeType.MERGE para facilitar o salvamento do paciente no cadastro do grupo
+    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "patient_id", nullable = false, unique = true)
     private PatientEntity patient;
 
-    // Lider do grupo
+    // Líder / Anfitrião do grupo
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leader_id", nullable = false)
     private UserEntity leader;
 
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupMemberEntity> members = new ArrayList<>();
+
+    //Método helper para vincular membro ao grupo de forma segura
+    public void addMember(GroupMemberEntity member) {
+        members.add(member);
+        member.setGroup(this);
+    }
 
     public void setInviteCode(String inviteCode) {
         if (inviteCode != null) {

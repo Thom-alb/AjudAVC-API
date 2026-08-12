@@ -26,18 +26,20 @@ public class SecurityConfigurations {
     
     @Autowired
     private SecurityFilter securityFilter;
-
-    @Bean 
+@Bean 
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 // Desativa CSRF, essencial para APIs REST aceitarem requisições de POST, PUT e DELETE 
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
+                // Habilita o suporte a OAuth2 Login com as configurações padrão
+                //.oauth2Login(Customizer.withDefaults())
                 // Configura a gestão de sessão para STATELESS (sem guardar sessão no servidor)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
                     req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/register").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/auth/google").permitAll();
                     req.anyRequest().permitAll();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

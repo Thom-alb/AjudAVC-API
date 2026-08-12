@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -27,28 +28,51 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        
         var token = this.recoverToken(request);
+
         if (token != null) {
-            var subject = tokenService.validateToken(token);
+            try {
+                var subject = tokenService.validateToken(token);
 
-            // Passa 'subject' e extrai o valor de dentro do Optional usando o orElseThrow()
-            UserDetails user = userRepository.findByEmail(subject)
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                // Garante que o subject retornado pelo JWT é um e-mail válido
+                if (subject != null && !subject.isBlank()) {
+                    // Busca o usuário de forma segura sem lançar RuntimeException no filtro
+                    var userOptional = userRepository.findByEmail(subject);
 
-            var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    if (userOptional.isPresent()) {
+                        UserDetails user = userOptional.get();
+                        var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
 
-            // Spring Security toma conhecimento de que o usuário está autenticado
-            org.springframework.security.core.context.SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
+                        // Define a autenticação no contexto do Spring Security
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    }
+                }
+            } catch (Exception e) {
+                // Caso o token esteja expirado, corrompido ou o usuário não exista mais,
+                // limpa o contexto para garantir segurança sem quebrar a execução do servidor
+                SecurityContextHolder.clearContext();
+                logger.warn("Falha ao autenticar token JWT: " + e.getMessage());
+            }
         }
+
         filterChain.doFilter(request, response);
     }
 
     private String recoverToken(HttpServletRequest request) {
         var authHeader = request.getHeader("Authorization");
-        if (authHeader == null)
+        
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return null;
-        return authHeader.replace("Bearer ", "");
-    }
+        }
 
+        String token = authHeader.replace("Bearer ", "").trim();
+
+        // Trata envios acidentais de strings vazias ou palavras reservadas do JS
+        if (token.isEmpty() || token.equalsIgnoreCase("null") || token.equalsIgnoreCase("undefined")) {
+            return null;
+        }
+
+        return token;
+    }
 }
