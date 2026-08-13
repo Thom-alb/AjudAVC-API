@@ -1,5 +1,7 @@
 package ajudavcapi.controller;
 
+import java.net.URI;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -11,14 +13,15 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import ajudavcapi.domain.dto.auth.AuthenticationDTO;
+import ajudavcapi.domain.dto.auth.GoogleLoginDTO;
 import ajudavcapi.domain.dto.auth.TokenResponseDTO;
 import ajudavcapi.domain.dto.user.UserRequestDTO;
 import ajudavcapi.domain.dto.user.UserResponseDTO;
 import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.GoogleAuthService;
 import ajudavcapi.service.TokenService;
 import ajudavcapi.service.UserService;
 import jakarta.validation.Valid;
-import java.net.URI;
 
 @RestController
 @RequestMapping("/auth")
@@ -33,6 +36,9 @@ public class AuthenticationController {
     @Autowired
     private TokenService tokenService;
 
+    @Autowired
+    private GoogleAuthService googleAuthService;
+
     @PostMapping("/login")
     public ResponseEntity<TokenResponseDTO> login(@RequestBody @Valid AuthenticationDTO data) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
@@ -41,7 +47,7 @@ public class AuthenticationController {
         var token = tokenService.generateToken((UserEntity) auth.getPrincipal());
         return ResponseEntity.ok(new TokenResponseDTO(token));
     }
-    
+
     @PostMapping("/register")
     public ResponseEntity<UserResponseDTO> register(@RequestBody @Valid UserRequestDTO data, UriComponentsBuilder uriBuilder) {
         UserEntity novoUsuario = userService.adicionarUsuario(data);
@@ -49,5 +55,10 @@ public class AuthenticationController {
         URI uri = uriBuilder.path("/user/{id}").buildAndExpand(novoUsuario.getId()).toUri();
         return ResponseEntity.created(uri).body(new UserResponseDTO(novoUsuario));
     }
-    
+
+    @PostMapping("/google")
+    public ResponseEntity<TokenResponseDTO> loginWithGoogle(@RequestBody @Valid GoogleLoginDTO data) {
+        String token = googleAuthService.authenticateWithGoogle(data.idToken());
+        return ResponseEntity.ok(new TokenResponseDTO(token));
+    }
 }

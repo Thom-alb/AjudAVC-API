@@ -26,21 +26,23 @@ public class SecurityConfigurations {
     
     @Autowired
     private SecurityFilter securityFilter;
-@Bean 
+
+    @Bean 
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // Desativa CSRF, essencial para APIs REST aceitarem requisições de POST, PUT e DELETE 
+                // Desativa CSRF (necessário para APIs REST com JWT)
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
-                // Habilita o suporte a OAuth2 Login com as configurações padrão
-                //.oauth2Login(Customizer.withDefaults())
-                // Configura a gestão de sessão para STATELESS (sem guardar sessão no servidor)
+                // Garante a política STATELESS sem criar/utilizar HttpSession
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
+                    // Libera os endpoints de login/cadastro/google
                     req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/register").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/google").permitAll();
-                    req.anyRequest().permitAll();
+                    
+                    // Exige autenticação por token JWT em todas as demais requisições
+                    req.anyRequest().authenticated();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -50,9 +52,7 @@ public class SecurityConfigurations {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Permite qualquer origem (IP/Domínio) mantendo o suporte a credentials
         configuration.setAllowedOriginPatterns(List.of("*"));
-        
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
