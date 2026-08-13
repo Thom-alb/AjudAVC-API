@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import api from '../src/service/api';
-import Estilos from '../Estilo/home'; // Importe seu arquivo de estilos aqui
+import Estilos from '../Estilo/home'; 
 
 export default function HomeScreen() {
   const router = useRouter();

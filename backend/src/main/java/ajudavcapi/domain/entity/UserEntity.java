@@ -9,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import ajudavcapi.domain.enums.AuthProvider;
 import ajudavcapi.domain.enums.GroupRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -45,6 +46,10 @@ public class UserEntity implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider")
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
     @NotBlank(message = "O nome é obrigatório")
     @Column(name = "name", nullable = false)
     private String name;
@@ -64,6 +69,7 @@ public class UserEntity implements UserDetails {
     private GroupRole role = GroupRole.MEMBER;
 
     public UserEntity(String name, String email, String password, GroupRole role) {
+        this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
@@ -82,6 +88,14 @@ public class UserEntity implements UserDetails {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+    }
+
+    public AuthProvider getAuthProvider() {
+        return this.authProvider;
+    }
+
+    public void setAuthProvider(AuthProvider authProvider) {
+        this.authProvider = authProvider;
     }
 
     // SPRING SECURITY e USER DETAILS

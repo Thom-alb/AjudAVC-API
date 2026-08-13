@@ -13,5 +13,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "src/service/api.js"  ]
+, "src/service/api.js", "app/_layout.jsx"  ]
 }

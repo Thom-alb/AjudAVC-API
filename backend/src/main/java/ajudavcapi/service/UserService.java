@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import ajudavcapi.domain.enums.AuthProvider;
 import ajudavcapi.domain.dto.user.UserRequestDTO;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.domain.repository.UserRepository;
@@ -51,6 +52,7 @@ public class UserService {
         user.setName(dto.name());
         user.setEmail(dto.email());
         user.setPassword(passwordEncoder.encode(dto.password())); 
+        user.setAuthProvider(AuthProvider.LOCAL);
 
         return userRepository.save(user);
     }
