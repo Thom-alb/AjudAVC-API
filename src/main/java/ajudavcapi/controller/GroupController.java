@@ -19,18 +19,20 @@ import ajudavcapi.domain.dto.group.JoinGroupDTO;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.service.GroupService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/groups")
-@RequiredArgsConstructor
 public class GroupController {
 
     private final GroupService groupService;
 
+    // Injeção via Construtor explícita
+    public GroupController(GroupService groupService) {
+        this.groupService = groupService;
+    }
+
     /**
      * Criar um novo Grupo de Cuidado.
-     * Qualquer usuário autenticado pode criar um grupo e se tornar o líder.
      */
     @PostMapping
     public ResponseEntity<GroupResponseDTO> createGroup(
@@ -45,7 +47,7 @@ public class GroupController {
     }
 
     /**
-     * Entrar em um grupo existente informando o código de convite (Membro / Cuidador).
+     * Entrar em um grupo existente informando o código de convite.
      */
     @PostMapping("/join")
     public ResponseEntity<GroupResponseDTO> joinGroup(
@@ -57,8 +59,7 @@ public class GroupController {
     }
 
     /**
-     * Consultar informações do grupo de cuidado ao qual o usuário logado pertence.
-     * Utilizado no fluxo de login para verificar se redireciona para a Home ou Escolha de Papel.
+     * Consultar informações do grupo do usuário logado.
      */
     @GetMapping("/me")
     public ResponseEntity<GroupResponseDTO> getMyGroup(
@@ -74,7 +75,7 @@ public class GroupController {
     }
 
     /**
-     * Consultar grupo por ID (Necessário para a URI do header Location do método POST).
+     * Consultar grupo por ID.
      */
     @GetMapping("/{id}")
     public ResponseEntity<GroupResponseDTO> getGroupById(

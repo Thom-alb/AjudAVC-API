@@ -3,6 +3,8 @@ package ajudavcapi.domain.entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import ajudavcapi.domain.enums.StrokeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,6 +53,7 @@ public class PatientEntity {
     private String importantDescription;
 
     // Ligação do paciente para o grupo, 1 paciente por 1 grupo
+    @JsonIgnore
     @OneToOne(mappedBy = "patient")
     private GroupEntity group;
 

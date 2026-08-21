@@ -40,13 +40,10 @@ public class GroupEntity {
     @Column(name = "invite_code", nullable = false, unique = true, length = 6)
     private String inviteCode;
 
-    // Relacionamento de 1 grupo para 1 paciente
-    // Adicionado CascadeType.PERSIST e CascadeType.MERGE para facilitar o salvamento do paciente no cadastro do grupo
-    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinColumn(name = "patient_id", nullable = false, unique = true)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "patient_id", nullable = true, unique = true)
     private PatientEntity patient;
 
-    // Líder / Anfitrião do grupo
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leader_id", nullable = false)
     private UserEntity leader;
@@ -54,7 +51,15 @@ public class GroupEntity {
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupMemberEntity> members = new ArrayList<>();
 
-    //Método helper para vincular membro ao grupo de forma segura
+    // Helper method para garantir o vínculo bidirecional com PatientEntity
+    public void setPatient(PatientEntity patient) {
+        this.patient = patient;
+        if (patient != null) {
+            patient.setGroup(this);
+        }
+    }
+
+    // Helper method para garantir o vínculo bidirecional com GroupMemberEntity
     public void addMember(GroupMemberEntity member) {
         members.add(member);
         member.setGroup(this);

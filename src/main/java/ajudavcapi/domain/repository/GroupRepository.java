@@ -10,6 +10,8 @@ import ajudavcapi.domain.entity.UserEntity;
 @Repository
 public interface GroupRepository extends JpaRepository<GroupEntity, Long> {
     List<GroupEntity> findByLeader(UserEntity leader);
-
     Optional<GroupEntity> findByInviteCode(String inviteCode);
+    boolean existsByInviteCode(String inviteCode);
+    Optional<GroupEntity> findByLeaderIdOrMembersUserId(Long leaderId, Long userId);
+
 }

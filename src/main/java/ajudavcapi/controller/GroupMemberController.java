@@ -2,7 +2,6 @@ package ajudavcapi.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,20 +13,23 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.GroupMemberService;
 import ajudavcapi.domain.dto.groupmember.GroupMemberResponseDTO;
 import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberRoleDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.GroupMemberService;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/group-members")
 public class GroupMemberController {
 
-    @Autowired
-    private GroupMemberService groupMemberService;
+    private final GroupMemberService groupMemberService;
 
-    // Listar todos os integrantes da rede de apoio do meu grupo
+    // Injeção via Construtor explícita
+    public GroupMemberController(GroupMemberService groupMemberService) {
+        this.groupMemberService = groupMemberService;
+    }
+
     @GetMapping
     public ResponseEntity<List<GroupMemberResponseDTO>> getGroupMembers(
             @AuthenticationPrincipal UserEntity userLogado) {
@@ -36,7 +38,6 @@ public class GroupMemberController {
         return ResponseEntity.ok(members);
     }
 
-    // Alterar o papel/permissão de um membro (Ex: promover membro a LÍDER)
     @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('LEADER')")
     public ResponseEntity<GroupMemberResponseDTO> updateMemberRole(
@@ -48,7 +49,6 @@ public class GroupMemberController {
         return ResponseEntity.ok(response);
     }
 
-    // Remover um membro da rede de apoio (Somente LÍDER)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('LEADER')")
     public ResponseEntity<Void> removeMember(
