@@ -26,7 +26,10 @@ C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\doma
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\monthlySummary\CreateMonthlySummaryDTO.java
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\monthlySummary\MonthlySummaryResponseDTO.java
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\patient\CreatePatientDTO.java
+<<<<<<< Updated upstream
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\patient\PatientRequestDTO.java
+=======
+>>>>>>> Stashed changes
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\patient\PatientResponseDTO.java
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\user\UserRequestDTO.java
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\user\UserResponseDTO.java
@@ -53,7 +56,10 @@ C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\doma
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\PatientRepository.java
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\UserRepository.java
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\WeeklyProgressRepository.java
+<<<<<<< Updated upstream
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\exception\GlobalExceptionHandler.java
+=======
+>>>>>>> Stashed changes
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\ActivityLogService.java
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\AuthorizationService.java
 C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\CalendarEventService.java
