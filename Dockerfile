@@ -4,7 +4,7 @@ FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
 
 # Copia a pasta .mvn de forma explícita para o diretório atual
-COPY .mvn/ .mvn/
+COPY .mvn .mvn
 COPY mvnw pom.xml ./
 
 # Garante a quebra de linha correta do script (previne erros no Windows) e permissão
