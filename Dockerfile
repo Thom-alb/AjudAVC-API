@@ -4,7 +4,7 @@ FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
 
 # Copia arquivos do Maven
-
+COPY .mvn .mvn
 COPY mvnw pom.xml ./
 
 RUN chmod +x mvnw
