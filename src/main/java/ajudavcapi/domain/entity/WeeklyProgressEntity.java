@@ -1,50 +1,27 @@
 package ajudavcapi.domain.entity;
 
-import java.time.LocalDateTime;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import ajudavcapi.domain.enums.MoodState;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import ajudavcapi.domain.enums.MoodState;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "weekly_progresses")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(of = "id")
+@Table(name = "weekly_progress")
 public class WeeklyProgressEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // O registro de progresso pertence a um grupo específico
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
     private GroupEntity group;
 
-    // O cuidador/usuário que realizou esta avaliação de progresso
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    // Sliders de avaliação de 1 a 10 demonstrados no layout da tela
     @Min(1) @Max(10)
     @Column(name = "communication_score", nullable = false)
     private Integer communicationScore;
@@ -57,15 +34,50 @@ public class WeeklyProgressEntity {
     @Column(name = "memory_score", nullable = false)
     private Integer memoryScore;
 
-    // Estado de Humor selecionado na interface gráfica
     @Enumerated(EnumType.STRING)
     @Column(name = "mood_state", nullable = false)
     private MoodState moodState;
 
-    // Campo de texto livre para observações gerais ("Descrição/Digite aqui")
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    // NOVO CAMPO: Identifica a semana dentro do mês (1, 2, 3, 4 ou 5)
+    @Column(name = "week_of_month", nullable = false)
+    private Integer weekOfMonth;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    // Getters, Setters e Construtores
+    public WeeklyProgressEntity() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public GroupEntity getGroup() { return group; }
+    public void setGroup(GroupEntity group) { this.group = group; }
+
+    public UserEntity getUser() { return user; }
+    public void setUser(UserEntity user) { this.user = user; }
+
+    public Integer getCommunicationScore() { return communicationScore; }
+    public void setCommunicationScore(Integer communicationScore) { this.communicationScore = communicationScore; }
+
+    public Integer getMobilityScore() { return mobilityScore; }
+    public void setMobilityScore(Integer mobilityScore) { this.mobilityScore = mobilityScore; }
+
+    public Integer getMemoryScore() { return memoryScore; }
+    public void setMemoryScore(Integer memoryScore) { this.memoryScore = memoryScore; }
+
+    public MoodState getMoodState() { return moodState; }
+    public void setMoodState(MoodState moodState) { this.moodState = moodState; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public Integer getWeekOfMonth() { return weekOfMonth; }
+    public void setWeekOfMonth(Integer weekOfMonth) { this.weekOfMonth = weekOfMonth; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

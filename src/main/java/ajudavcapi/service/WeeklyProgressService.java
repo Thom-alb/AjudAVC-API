@@ -1,20 +1,18 @@
 package ajudavcapi.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
+import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
+import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+import ajudavcapi.domain.repository.WeeklyProgressRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ajudavcapi.domain.entity.GroupEntity;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.entity.WeeklyProgressEntity;
-import ajudavcapi.domain.repository.GroupRepository;
-import ajudavcapi.domain.repository.WeeklyProgressRepository;
-import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
-import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
-
+import java.time.LocalDateTime;
+import java.time.temporal.WeekFields;
+import java.util.List;
+import java.util.Locale;
 
 @Service
 public class WeeklyProgressService {
@@ -22,33 +20,33 @@ public class WeeklyProgressService {
     @Autowired
     private WeeklyProgressRepository weeklyProgressRepository;
 
-    @Autowired
-    private GroupRepository groupRepository;
-
     @Transactional
     public WeeklyProgressResponseDTO createProgress(CreateWeeklyProgressDTO dto, UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
+        WeeklyProgressEntity entity = new WeeklyProgressEntity();
+        
+        entity.setUser(userLogado);
+        entity.setGroup(userLogado.getGroup()); // Assume que o usuário pertence a um grupo
+        entity.setCommunicationScore(dto.communicationScore());
+        entity.setMobilityScore(dto.mobilityScore());
+        entity.setMemoryScore(dto.memoryScore());
+        entity.setMoodState(dto.moodState());
+        entity.setDescription(dto.description());
 
-        WeeklyProgressEntity progress = new WeeklyProgressEntity();
-        progress.setGroup(group);
-        progress.setUser(userLogado);
-        progress.setCommunicationScore(dto.communicationScore());
-        progress.setMobilityScore(dto.mobilityScore());
-        progress.setMemoryScore(dto.memoryScore());
-        progress.setMoodState(dto.moodState());
-        progress.setDescription(dto.description());
-        progress.setCreatedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        entity.setCreatedAt(now);
 
-        WeeklyProgressEntity savedProgress = weeklyProgressRepository.save(progress);
+        // Calcula dinamicamente a semana do mês (ex: 1ª, 2ª, 3ª ou 4ª semana)
+        int weekOfMonth = now.get(WeekFields.of(Locale.getDefault()).weekOfMonth());
+        entity.setWeekOfMonth(weekOfMonth);
 
-        return mapToDTO(savedProgress);
+        WeeklyProgressEntity saved = weeklyProgressRepository.save(entity);
+        return mapToDTO(saved);
     }
 
     @Transactional(readOnly = true)
     public List<WeeklyProgressResponseDTO> getGroupProgressHistory(UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
-
-        return weeklyProgressRepository.findByGroupIdOrderByCreatedAtDesc(group.getId())
+        Long groupId = userLogado.getGroup().getId();
+        return weeklyProgressRepository.findByGroupIdOrderByCreatedAtDesc(groupId)
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
@@ -56,39 +54,29 @@ public class WeeklyProgressService {
 
     @Transactional
     public void deleteProgress(Long id, UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
+        WeeklyProgressEntity entity = weeklyProgressRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Registro de progresso não encontrado"));
 
-        WeeklyProgressEntity progress = weeklyProgressRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Avaliação de progresso não encontrada."));
-
-        if (!progress.getGroup().getId().equals(group.getId())) {
-            throw new IllegalArgumentException("Acesso negado: Esta avaliação pertence a outro grupo.");
+        // Validação de segurança: apenas membros do mesmo grupo podem excluir
+        if (!entity.getGroup().getId().equals(userLogado.getGroup().getId())) {
+            throw new RuntimeException("Acesso negado: registro pertence a outro grupo");
         }
 
-        weeklyProgressRepository.delete(progress);
-    }
-
-    private GroupEntity getUserGroup(UserEntity user) {
-        if (user.getGroup() != null) {
-            return user.getGroup();
-        }
-        return groupRepository.findByLeader(user)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
+        weeklyProgressRepository.delete(entity);
     }
 
     private WeeklyProgressResponseDTO mapToDTO(WeeklyProgressEntity entity) {
         return new WeeklyProgressResponseDTO(
-            entity.getId(),
-            entity.getCommunicationScore(),
-            entity.getMobilityScore(),
-            entity.getMemoryScore(),
-            entity.getMoodState(),
-            entity.getDescription(),
-            entity.getCreatedAt(),
-            entity.getUser().getName(),
-            entity.getGroup().getId()
+                entity.getId(),
+                entity.getCommunicationScore(),
+                entity.getMobilityScore(),
+                entity.getMemoryScore(),
+                entity.getMoodState(),
+                entity.getDescription(),
+                entity.getWeekOfMonth(),
+                entity.getCreatedAt(),
+                entity.getUser().getName(), // Ou getUsername()
+                entity.getGroup().getId()
         );
     }
 }

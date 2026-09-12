@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,21 +25,30 @@ public class SecurityConfigurations {
     
     @Autowired
     private SecurityFilter securityFilter;
-@Bean 
+
+    @Bean 
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // Desativa CSRF, essencial para APIs REST aceitarem requisições de POST, PUT e DELETE 
+                // Desativa CSRF (necessário para APIs REST com JWT)
                 .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults())
-                // Habilita o suporte a OAuth2 Login com as configurações padrão
-                //.oauth2Login(Customizer.withDefaults())
-                // Configura a gestão de sessão para STATELESS (sem guardar sessão no servidor)
+                
+                // Conecta explicitamente o Bean de configuração de CORS criado abaixo
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                
+                // Configuração de sessão STATELESS
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                
                 .authorizeHttpRequests(req -> {
+                    // Libera requisições de PREFLIGHT (OPTIONS) do navegador/CORS
+                    req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+                    
+                    // Rotas públicas de Autenticação
                     req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/register").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/google").permitAll();
-                    req.anyRequest().permitAll();
+                    
+                    // Qualquer outra requisição
+                    req.anyRequest().permitAll(); 
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -50,11 +58,15 @@ public class SecurityConfigurations {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Permite qualquer origem (IP/Domínio) mantendo o suporte a credentials
+        // Aceita qualquer origem (localhost:8081, Expo Go, Render, etc.)
         configuration.setAllowedOriginPatterns(List.of("*"));
         
+        // Métodos HTTP permitidos
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
+        
+        // Headers e Credenciais
         configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

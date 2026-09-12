@@ -1,19 +1,22 @@
 package ajudavcapi.domain.repository;
 
+import ajudavcapi.domain.entity.MonthlySummaryEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import ajudavcapi.domain.entity.MonthlySummaryEntity;
-
-@Repository
 public interface MonthlySummaryRepository extends JpaRepository<MonthlySummaryEntity, Long> {
 
-    // Busca todos os resumos de um grupo ordenados por ano e mês (mais recentes primeiro)
-    List<MonthlySummaryEntity> findByGroupIdOrderByYearDescMonthDesc(Long groupId);
+    @Query("SELECT m FROM MonthlySummaryEntity m WHERE m.group.id = :groupId AND m.month = :month AND m.year = :year")
+    Optional<MonthlySummaryEntity> findByGroupIdAndMonthAndYear(
+            @Param("groupId") Long groupId, 
+            @Param("month") Integer month, 
+            @Param("year") Integer year
+    );
 
-    // Busca resumo de um mês/ano específico no grupo (para evitar duplicatas)
-    Optional<MonthlySummaryEntity> findByGroupIdAndMonthAndYear(Long groupId, Integer month, Integer year);
+    @Query("SELECT m FROM MonthlySummaryEntity m WHERE m.group.id = :groupId ORDER BY m.year DESC, m.month DESC")
+    List<MonthlySummaryEntity> findByGroupIdOrderByYearDescMonthDesc(@Param("groupId") Long groupId);
 }
