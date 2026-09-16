@@ -25,7 +25,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -54,16 +53,20 @@ public class UserEntity implements UserDetails {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @NotBlank(message = "A senha é obrigatória")
-    @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
-    @Column(name = "password", nullable = false)
+    // A validação de tamanho mínimo deve residir no seu UserRequestDTO do cadastro tradicional.
+    @Column(name = "password", nullable = true)
     private String password;
+
+    // Adicionado para identificar a origem da autenticação e resolver o DTO
+    @Column(name = "provider", nullable = false)
+    private String provider = "LOCAL";
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private GroupRole role = GroupRole.MEMBER;
 
     public UserEntity(String name, String email, String password, GroupRole role) {
+        this.name = name; 
         this.email = email;
         this.password = password;
         this.role = role;
@@ -82,6 +85,9 @@ public class UserEntity implements UserDetails {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        if (this.provider == null) {
+            this.provider = "LOCAL";
+        }
     }
 
     // SPRING SECURITY e USER DETAILS

@@ -42,14 +42,15 @@ public class SecurityConfigurations {
                     // Libera requisições de PREFLIGHT (OPTIONS) do navegador/CORS
                     req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     
-                    // Rotas públicas de Autenticação
+                    // Rotas públicas de Autenticação (Login estruturado e Google OAuth2 unificados)
                     req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/register").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/google").permitAll();
                     
-                    // Qualquer outra requisição
-                    req.anyRequest().permitAll(); 
+                    // Exige que o JWT do SecurityFilter esteja presente para todas as outras rotas do app
+                    req.anyRequest().authenticated(); 
                 })
+                // Intercepta as chamadas privadas usando seu filtro padrão de JWT
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
