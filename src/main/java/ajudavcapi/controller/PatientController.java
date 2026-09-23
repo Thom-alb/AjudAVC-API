@@ -26,7 +26,6 @@ public class PatientController {
     @Autowired
     private PatientService patientService;
 
-    // Cadastrar Paciente (Somente LÍDER)
     @PostMapping
     @PreAuthorize("hasRole('LEADER')")
     public ResponseEntity<PatientResponseDTO> createPatient(
@@ -34,18 +33,26 @@ public class PatientController {
             @AuthenticationPrincipal UserEntity userLogado,
             UriComponentsBuilder uriBuilder) {
 
-        PatientResponseDTO response = patientService.createPatient(dto, userLogado);
+        PatientResponseDTO response =
+            patientService.createPatient(dto, userLogado);
 
-        URI uri = uriBuilder.path("/patients/{id}").buildAndExpand(response.id()).toUri();
-        return ResponseEntity.created(uri).body(response);
+        URI uri = uriBuilder
+                .path("/patients/{id}")
+                .buildAndExpand(response.id())
+                .toUri();
+
+        return ResponseEntity
+                .created(uri)
+                .body(response);
     }
 
-    // Obter Paciente do Grupo (Líder ou Membro)
     @GetMapping("/me")
     public ResponseEntity<PatientResponseDTO> getMyPatient(
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        PatientResponseDTO response = patientService.getPatientByGroup(userLogado);
+        PatientResponseDTO response =
+            patientService.getPatientByGroup(userLogado);
+
         return ResponseEntity.ok(response);
     }
 }

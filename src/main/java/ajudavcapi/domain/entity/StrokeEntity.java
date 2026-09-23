@@ -2,6 +2,8 @@ package ajudavcapi.domain.entity;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import ajudavcapi.domain.enums.StrokeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -39,6 +41,7 @@ public class StrokeEntity {
     @Column(name = "stroke_date", nullable = false)
     private LocalDate strokeDate;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "patient_id", nullable = false)
     private PatientEntity patient;
