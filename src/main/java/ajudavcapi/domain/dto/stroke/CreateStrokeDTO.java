@@ -15,4 +15,5 @@ public record CreateStrokeDTO(
     @PastOrPresent(message = "A data do AVC não pode ser uma data futura.")
     LocalDate strokeDate
 
-) {}
+) {
+}

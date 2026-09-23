@@ -33,4 +33,5 @@ public record CreatePatientDTO(
     @Valid
     List<CreateStrokeDTO> strokes
 
-) {}
+) {
+}

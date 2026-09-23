@@ -52,9 +52,11 @@ public class GroupService {
                     dto.patient().importantDescription()
             );
 
+
             if (dto.patient().strokes() != null) {
 
-                for (var strokeDTO : dto.patient().strokes()) {
+                for (ajudavcapi.domain.dto.stroke.CreateStrokeDTO strokeDTO
+                        : dto.patient().strokes()) {
 
                     StrokeEntity stroke = new StrokeEntity();
 
@@ -100,7 +102,7 @@ public class GroupService {
                         .findByInviteCode(dto.inviteCode())
                         .orElseThrow(() ->
                                 new RuntimeException(
-                                    "Código de convite inválido ou grupo não encontrado."
+                                        "Código de convite inválido ou grupo não encontrado."
                                 )
                         );
 
@@ -109,8 +111,8 @@ public class GroupService {
                         .stream()
                         .anyMatch(m ->
                                 m.getUser()
-                                 .getId()
-                                 .equals(user.getId())
+                                        .getId()
+                                        .equals(user.getId())
                         );
 
         if (alreadyMember) {
@@ -144,7 +146,7 @@ public class GroupService {
                         )
                         .orElseThrow(() ->
                                 new RuntimeException(
-                                    "O usuário não pertence a nenhum grupo de cuidado."
+                                        "O usuário não pertence a nenhum grupo de cuidado."
                                 )
                         );
 
@@ -160,7 +162,7 @@ public class GroupService {
                 groupRepository.findById(id)
                         .orElseThrow(() ->
                                 new RuntimeException(
-                                    "Grupo não encontrado para o ID especificado."
+                                        "Grupo não encontrado para o ID especificado."
                                 )
                         );
 
@@ -173,8 +175,8 @@ public class GroupService {
                         .stream()
                         .anyMatch(m ->
                                 m.getUser()
-                                 .getId()
-                                 .equals(user.getId())
+                                        .getId()
+                                        .equals(user.getId())
                         );
 
         if (!isMemberOrLeader) {
@@ -191,7 +193,6 @@ public class GroupService {
         String code;
 
         do {
-
             StringBuilder sb =
                     new StringBuilder(6);
 
