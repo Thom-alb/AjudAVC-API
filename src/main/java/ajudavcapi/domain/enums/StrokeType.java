@@ -1,7 +1,7 @@
 package ajudavcapi.domain.enums;
 
 public enum StrokeType {
-    ISCHEMIC,            // Isquêmico (entupimento de vaso)
-    HEMORRHAGIC,         // Hemorrágico (rompimento de vaso)
-    TRANSIENT_ISCHEMIC   // Isquêmico transitório (entupimento de vaso tempórario)
+    ISQUEMICO,            // Isquêmico (entupimento de vaso)
+    HEMORRAGICO,         // Hemorrágico (rompimento de vaso)
+    ISQUEMICO_TRANSITORIO   // Isquêmico transitório (entupimento de vaso tempórario)
 }
