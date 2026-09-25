@@ -10,7 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 
-public record CreatePatientDTO(
+public record UpdatePatientDTO(
     @NotBlank(message = "O nome do paciente é obrigatório")
     String name,
 

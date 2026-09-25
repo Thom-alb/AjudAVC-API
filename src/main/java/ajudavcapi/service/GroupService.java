@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ajudavcapi.domain.dto.group.CreateGroupDTO;
 import ajudavcapi.domain.dto.group.GroupResponseDTO;
 import ajudavcapi.domain.dto.group.JoinGroupDTO;
+import ajudavcapi.domain.dto.group.UpdateGroupDTO;
 import ajudavcapi.domain.entity.GroupEntity;
 import ajudavcapi.domain.entity.GroupMemberEntity;
 import ajudavcapi.domain.entity.PatientEntity;
@@ -52,7 +53,6 @@ public class GroupService {
                     dto.patient().importantDescription()
             );
 
-
             if (dto.patient().strokes() != null) {
 
                 for (ajudavcapi.domain.dto.stroke.CreateStrokeDTO strokeDTO
@@ -90,6 +90,43 @@ public class GroupService {
                 groupRepository.save(group);
 
         return new GroupResponseDTO(savedGroup);
+    }
+
+    @Transactional
+    public GroupResponseDTO updateGroup(
+            Long id,
+            UpdateGroupDTO dto,
+            UserEntity user) {
+
+        GroupEntity group = groupRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(
+                        "Grupo não encontrado para o ID especificado."
+                ));
+
+        boolean isMemberOrLeader = group.getLeader().getId().equals(user.getId())
+                || group.getMembers().stream()
+                        .anyMatch(m -> m.getUser().getId().equals(user.getId()));
+
+        if (!isMemberOrLeader) {
+            throw new RuntimeException(
+                    "Acesso negado: você não tem permissão para alterar este grupo."
+            );
+        }
+
+        group.setName(dto.name());
+
+        if (dto.patient() != null && group.getPatient() != null) {
+            PatientEntity patient = group.getPatient();
+            patient.setName(dto.patient().name().trim());
+            patient.setBirthDate(dto.patient().birthDate());
+            patient.setImportantDescription(
+                    dto.patient().importantDescription()
+            );
+        }
+
+        GroupEntity updatedGroup = groupRepository.save(group);
+
+        return new GroupResponseDTO(updatedGroup);
     }
 
     @Transactional
