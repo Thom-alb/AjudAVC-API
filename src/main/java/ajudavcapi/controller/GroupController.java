@@ -8,6 +8,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +17,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import ajudavcapi.domain.dto.group.CreateGroupDTO;
 import ajudavcapi.domain.dto.group.GroupResponseDTO;
 import ajudavcapi.domain.dto.group.JoinGroupDTO;
+import ajudavcapi.domain.dto.group.UpdateGroupDTO;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.service.GroupService;
 import jakarta.validation.Valid;
@@ -26,7 +28,6 @@ public class GroupController {
 
     private final GroupService groupService;
 
-    // Injeção via Construtor explícita
     public GroupController(GroupService groupService) {
         this.groupService = groupService;
     }
@@ -44,6 +45,19 @@ public class GroupController {
 
         URI uri = uriBuilder.path("/groups/{id}").buildAndExpand(response.id()).toUri();
         return ResponseEntity.created(uri).body(response);
+    }
+
+    /**
+     * Atualizar dados do Grupo (e do Paciente associado).
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<GroupResponseDTO> updateGroup(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdateGroupDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupResponseDTO response = groupService.updateGroup(id, dto, userLogado);
+        return ResponseEntity.ok(response);
     }
 
     /**

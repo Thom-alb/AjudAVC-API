@@ -2,18 +2,20 @@ package ajudavcapi.domain.entity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import ajudavcapi.domain.enums.StrokeType;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -40,23 +42,63 @@ public class PatientEntity {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
-    // Enum para definição do tipo de avc
-    @Enumerated(EnumType.STRING)
-    @Column(name = "stroke_type", nullable = false)
-    private StrokeType strokeType;
-
-    // Data em que ocorreu o AVC (importante para calcular o tempo de recuperação)
-    @Column(name = "stroke_date")
-    private LocalDate strokeDate;
-
     @Column(name = "important_description", columnDefinition = "TEXT")
     private String importantDescription;
 
-    // Ligação do paciente para o grupo, 1 paciente por 1 grupo
+    @OneToMany(
+        mappedBy = "patient",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private List<StrokeEntity> strokes = new ArrayList<>();
+
+    @OneToMany(
+        mappedBy = "patient",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private List<DiseaseEntity> diseases = new ArrayList<>();
+
     @JsonIgnore
     @OneToOne(mappedBy = "patient")
     private GroupEntity group;
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+    }
+
+    // Métodos Utilitários para sincronização dos relacionamentos bidirecionais
+    public void addStroke(StrokeEntity stroke) {
+        if (stroke != null) {
+            strokes.add(stroke);
+            stroke.setPatient(this);
+        }
+    }
+
+    public void removeStroke(StrokeEntity stroke) {
+        if (stroke != null) {
+            strokes.remove(stroke);
+            stroke.setPatient(null);
+        }
+    }
+
+    public void addDisease(DiseaseEntity disease) {
+        if (disease != null) {
+            diseases.add(disease);
+            disease.setPatient(this);
+        }
+    }
+
+    public void removeDisease(DiseaseEntity disease) {
+        if (disease != null) {
+            diseases.remove(disease);
+            disease.setPatient(null);
+        }
+    }
 }

@@ -1,0 +1,20 @@
+package ajudavcapi.domain.enums;
+
+public enum DiseaseType {
+
+    HIPERTENSAO,
+    COLESTEROL_ALTO,
+    DIABETES_TIPO_1,
+    DIABETES_TIPO_2,
+    OBESIDADE,
+    HIPOTIREOIDISMO,
+    OSTEOARTRITE,
+    OSTEOPOROSE,
+    ANSIEDADE,
+    DEPRESSAO,
+    ALZHEIMER,
+    INFARTO_AGUDO_DO_MIOCARDIO,
+    DPOC,
+    DEMENCIA,
+    CANCER
+} 

@@ -1,19 +1,17 @@
 package ajudavcapi.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
+import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
+import ajudavcapi.domain.entity.MonthlySummaryEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+import ajudavcapi.domain.enums.MoodState;
+import ajudavcapi.domain.repository.MonthlySummaryRepository;
+import ajudavcapi.domain.repository.WeeklyProgressRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ajudavcapi.domain.entity.GroupEntity;
-import ajudavcapi.domain.entity.MonthlySummaryEntity;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.repository.GroupRepository;
-import ajudavcapi.domain.repository.MonthlySummaryRepository;
-import ajudavcapi.domain.dto.monthlySummary.CreateMonthlySummaryDTO;
-import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
+import java.util.List;
 
 @Service
 public class MonthlySummaryService {
@@ -22,99 +20,80 @@ public class MonthlySummaryService {
     private MonthlySummaryRepository monthlySummaryRepository;
 
     @Autowired
-    private GroupRepository groupRepository;
+    private WeeklyProgressRepository weeklyProgressRepository;
 
     @Transactional
-    public MonthlySummaryResponseDTO createOrUpdateSummary(CreateMonthlySummaryDTO dto, UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
+    public MonthlySummaryResponseDTO getOrCalculateSummary(Integer month, Integer year, UserEntity userLogado) {
+        Long groupId = userLogado.getGroup().getId();
 
-        // Se já existir um resumo para o mês/ano, atualiza-o
-        MonthlySummaryEntity summary = monthlySummaryRepository
-                .findByGroupIdAndMonthAndYear(group.getId(), dto.month(), dto.year())
-                .orElse(new MonthlySummaryEntity());
+        // 1. Busca todas as avaliações registradas naquele mês para o grupo
+        List<WeeklyProgressEntity> progressList = weeklyProgressRepository.findByGroupIdAndMonthAndYear(groupId, month, year);
 
-        summary.setGroup(group);
-        summary.setMonth(dto.month());
-        summary.setYear(dto.year());
-        summary.setAverageCommunication(dto.averageCommunication());
-        summary.setAverageMobility(dto.averageMobility());
-        summary.setAverageMemory(dto.averageMemory());
-
-        summary.setCountAnimo(dto.countAnimo() != null ? dto.countAnimo() : 0);
-        summary.setCountFeliz(dto.countFeliz() != null ? dto.countFeliz() : 0);
-        summary.setCountApatia(dto.countApatia() != null ? dto.countApatia() : 0);
-        summary.setCountRaiva(dto.countRaiva() != null ? dto.countRaiva() : 0);
-        summary.setCountTriste(dto.countTriste() != null ? dto.countTriste() : 0);
-
-        if (summary.getId() == null) {
-            summary.setCreatedAt(LocalDateTime.now());
+        // 2. Se não houver registros no mês, retorna valores zerados
+        if (progressList.isEmpty()) {
+            return new MonthlySummaryResponseDTO(null, month, year, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, null, groupId);
         }
 
-        MonthlySummaryEntity savedSummary = monthlySummaryRepository.save(summary);
+        // 3. Calcula as médias dos sliders
+        double avgComm = progressList.stream().mapToInt(WeeklyProgressEntity::getCommunicationScore).average().orElse(0.0);
+        double avgMob = progressList.stream().mapToInt(WeeklyProgressEntity::getMobilityScore).average().orElse(0.0);
+        double avgMem = progressList.stream().mapToInt(WeeklyProgressEntity::getMemoryScore).average().orElse(0.0);
 
-        return mapToDTO(savedSummary);
+        // 4. Conta as ocorrências de cada humor no mês
+        int cAnimo = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.ANIMO).count();
+        int cFeliz = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.FELIZ).count();
+        int cApatia = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.APATIA).count();
+        int cRaiva = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.RAIVA).count();
+        int cTriste = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.TRISTE).count();
+
+        // 5. Atualiza ou cria o registro no banco para cache/histórico
+        MonthlySummaryEntity summary = monthlySummaryRepository.findByGroupIdAndMonthAndYear(groupId, month, year)
+                .orElseGet(() -> {
+                    MonthlySummaryEntity newEntity = new MonthlySummaryEntity();
+                    newEntity.setGroup(userLogado.getGroup());
+                    newEntity.setMonth(month);
+                    newEntity.setYear(year);
+                    return newEntity;
+                });
+
+        summary.setAverageCommunication(avgComm);
+        summary.setAverageMobility(avgMob);
+        summary.setAverageMemory(avgMem);
+        summary.setCountAnimo(cAnimo);
+        summary.setCountFeliz(cFeliz);
+        summary.setCountApatia(cApatia);
+        summary.setCountRaiva(cRaiva);
+        summary.setCountTriste(cTriste);
+
+        MonthlySummaryEntity saved = monthlySummaryRepository.save(summary);
+
+        return mapToDTO(saved);
     }
 
     @Transactional(readOnly = true)
     public List<MonthlySummaryResponseDTO> getGroupSummaries(UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
-
-        return monthlySummaryRepository.findByGroupIdOrderByYearDescMonthDesc(group.getId())
+        Long groupId = userLogado.getGroup().getId();
+        return monthlySummaryRepository.findByGroupIdOrderByYearDescMonthDesc(groupId)
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public MonthlySummaryResponseDTO getSummaryByMonthAndYear(Integer month, Integer year, UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
-
-        MonthlySummaryEntity summary = monthlySummaryRepository
-                .findByGroupIdAndMonthAndYear(group.getId(), month, year)
-                .orElseThrow(() -> new IllegalArgumentException("Resumo do mês " + month + "/" + year + " não encontrado."));
-
-        return mapToDTO(summary);
-    }
-
-    @Transactional
-    public void deleteSummary(Long id, UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
-
-        MonthlySummaryEntity summary = monthlySummaryRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Resumo mensal não encontrado."));
-
-        if (!summary.getGroup().getId().equals(group.getId())) {
-            throw new IllegalArgumentException("Acesso negado: Este resumo pertence a outro grupo.");
-        }
-
-        monthlySummaryRepository.delete(summary);
-    }
-
-    private GroupEntity getUserGroup(UserEntity user) {
-        if (user.getGroup() != null) {
-            return user.getGroup();
-        }
-        return groupRepository.findByLeader(user)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
-    }
-
     private MonthlySummaryResponseDTO mapToDTO(MonthlySummaryEntity entity) {
         return new MonthlySummaryResponseDTO(
-            entity.getId(),
-            entity.getMonth(),
-            entity.getYear(),
-            entity.getAverageCommunication(),
-            entity.getAverageMobility(),
-            entity.getAverageMemory(),
-            entity.getCountAnimo(),
-            entity.getCountFeliz(),
-            entity.getCountApatia(),
-            entity.getCountRaiva(),
-            entity.getCountTriste(),
-            entity.getCreatedAt(),
-            entity.getGroup().getId()
+                entity.getId(),
+                entity.getMonth(),
+                entity.getYear(),
+                entity.getAverageCommunication(),
+                entity.getAverageMobility(),
+                entity.getAverageMemory(),
+                entity.getCountAnimo(),
+                entity.getCountFeliz(),
+                entity.getCountApatia(),
+                entity.getCountRaiva(),
+                entity.getCountTriste(),
+                entity.getCreatedAt(),
+                entity.getGroup().getId()
         );
     }
 }

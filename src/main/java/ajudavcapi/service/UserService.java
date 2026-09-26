@@ -1,6 +1,7 @@
 package ajudavcapi.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,7 +37,17 @@ public class UserService {
         UserEntity u = new UserEntity();
         u.setName(user.name());
         u.setEmail(user.email());
-        u.setPassword(passwordEncoder.encode(user.password())); 
+        
+        // Estratégia de diferenciação limpa de fluxo
+        if (user.password() == null || user.password().isBlank()) {
+            // Conta vinda do Google OAuth2
+            u.setPassword(null);
+            u.setProvider("GOOGLE");
+        } else {
+            // Conta estruturada convencional por credenciais
+            u.setPassword(passwordEncoder.encode(user.password()));
+            u.setProvider("LOCAL");
+        }
 
         return userRepository.save(u);
     }
@@ -50,7 +61,15 @@ public class UserService {
 
         user.setName(dto.name());
         user.setEmail(dto.email());
-        user.setPassword(passwordEncoder.encode(dto.password())); 
+        
+        // Mantém a flexibilidade para atualizações de dados
+        if (dto.password() == null || dto.password().isBlank()) {
+            user.setPassword(null);
+            user.setProvider("GOOGLE");
+        } else {
+            user.setPassword(passwordEncoder.encode(dto.password()));
+            user.setProvider("LOCAL");
+        }
 
         return userRepository.save(user);
     }
@@ -58,5 +77,16 @@ public class UserService {
     public void deletarUsuario(Long id) {
         UserEntity user = buscarPorId(id);
         userRepository.delete(user);
+    }
+
+    public Optional<UserEntity> buscarPorEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    /**
+     * Método utilitário para persistir alterações diretas em entidades persistidas.
+     */
+    public UserEntity salvarUsuario(UserEntity user) {
+        return userRepository.save(user);
     }
 }

@@ -1,14 +1,25 @@
 package ajudavcapi.domain.dto.patient;
 
 import java.time.LocalDate;
-import ajudavcapi.domain.enums.StrokeType; // Ajuste para o pacote do seu Enum
+import java.util.List;
+
+import ajudavcapi.domain.dto.disease.DiseaseResponseDTO;
+import ajudavcapi.domain.dto.stroke.StrokeResponseDTO;
 
 public record PatientResponseDTO(
+
     Long id,
+
     String name,
-    StrokeType strokeType,
+
     LocalDate birthDate,
-    LocalDate strokeDate,
+
     String importantDescription,
+
+    List<StrokeResponseDTO> strokes,
+
+    List<DiseaseResponseDTO> diseases,
+
     Long groupId
+
 ) {}

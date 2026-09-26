@@ -10,6 +10,7 @@ public record WeeklyProgressResponseDTO(
     Integer memoryScore,
     MoodState moodState,
     String description,
+    Integer weekOfMonth,
     LocalDateTime createdAt,
     String authorName,
     Long groupId
