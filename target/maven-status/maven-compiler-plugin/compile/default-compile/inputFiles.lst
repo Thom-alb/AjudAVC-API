@@ -1,72 +1,76 @@
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\Application.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\config\SecurityConfigurations.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\config\SecurityFilter.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\controller\ActivityLogController.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\controller\AuthenticationController.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\controller\CalendarEventController.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\controller\GroupController.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\controller\GroupMemberController.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\controller\MonthlySummaryController.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\controller\PatientController.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\controller\UserController.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\controller\WeeklyProgressController.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\activitylog\ActivityLogResponseDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\activitylog\CreateActivityLogDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\auth\AuthenticationDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\auth\RegisterDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\auth\TokenResponseDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\calendarEvent\CalendarEventResponseDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\calendarEvent\CreateCalendarEventDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\exception\StandardErrorDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\group\CreateGroupDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\group\GroupResponseDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\group\JoinGroupDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\groupmember\GroupMemberResponseDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\groupmember\UpdateGroupMemberRoleDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\monthlySummary\CreateMonthlySummaryDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\monthlySummary\MonthlySummaryResponseDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\patient\CreatePatientDTO.java
-<<<<<<< Updated upstream
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\patient\PatientRequestDTO.java
-=======
->>>>>>> Stashed changes
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\patient\PatientResponseDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\user\UserRequestDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\user\UserResponseDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\weeklyProgress\CreateWeeklyProgressDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\weeklyProgress\WeeklyProgressResponseDTO.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\entity\ActivityLogEntity.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\entity\CalendarEventEntity.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\entity\DeviceToken.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\entity\GroupEntity.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\entity\GroupMemberEntity.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\entity\MonthlySummaryEntity.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\entity\PatientEntity.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\entity\UserEntity.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\entity\WeeklyProgressEntity.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\enums\GroupRole.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\enums\MoodState.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\enums\StrokeType.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\ActivityLogRepository.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\CalendarEventRepository.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\DeviceTokenRepository.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\GroupMemberRepository.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\GroupRepository.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\MonthlySummaryRepository.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\PatientRepository.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\UserRepository.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\WeeklyProgressRepository.java
-<<<<<<< Updated upstream
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\exception\GlobalExceptionHandler.java
-=======
->>>>>>> Stashed changes
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\ActivityLogService.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\AuthorizationService.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\CalendarEventService.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\GroupMemberService.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\GroupService.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\MonthlySummaryService.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\PatientService.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\TokenService.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\UserService.java
-C:\Users\Tecnico - TI\Documents\thomas\AjudAVC-API\src\main\java\ajudavcapi\service\WeeklyProgressService.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/Application.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/config/SecurityConfigurations.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/config/SecurityFilter.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/controller/ActivityLogController.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/controller/AuthenticationController.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/controller/CalendarEventController.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/controller/GroupController.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/controller/GroupMemberController.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/controller/MonthlySummaryController.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/controller/PatientController.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/controller/UserController.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/controller/WeeklyProgressController.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/activitylog/ActivityLogResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/activitylog/CreateActivityLogDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/auth/AuthenticationDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/auth/GoogleLoginDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/auth/RegisterDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/auth/TokenResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/calendarEvent/CalendarEventResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/calendarEvent/CreateCalendarEventDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/disease/DiseaseResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/exception/StandardErrorDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/group/CreateGroupDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/group/GroupResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/group/JoinGroupDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/group/UpdateGroupDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/groupmember/GroupMemberResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/groupmember/UpdateGroupMemberRoleDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/monthlySummary/CreateMonthlySummaryDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/monthlySummary/MonthlySummaryResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/patient/CreatePatientDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/patient/PatientResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/patient/UpdatePatientDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/stroke/CreateStrokeDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/stroke/StrokeResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/user/UserRequestDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/user/UserResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/weeklyProgress/CreateWeeklyProgressDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/dto/weeklyProgress/WeeklyProgressResponseDTO.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/ActivityLogEntity.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/CalendarEventEntity.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/DeviceToken.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/DiseaseEntity.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/GroupEntity.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/GroupMemberEntity.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/MonthlySummaryEntity.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/PatientEntity.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/StrokeEntity.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/UserEntity.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/entity/WeeklyProgressEntity.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/enums/DiseaseType.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/enums/GroupRole.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/enums/MoodState.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/enums/StrokeType.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/ActivityLogRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/CalendarEventRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/DeviceTokenRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/DiseaseRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/GroupMemberRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/GroupRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/MonthlySummaryRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/PatientRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/StrokeRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/UserRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/domain/repository/WeeklyProgressRepository.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/exception/GlobalExceptionHandler.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/service/ActivityLogService.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/service/AuthorizationService.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/service/CalendarEventService.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/service/GroupMemberService.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/service/GroupService.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/service/MonthlySummaryService.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/service/PatientService.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/service/TokenService.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/service/UserService.java
+/home/thomas/Documentos/GitHub/AjudAVC-API/src/main/java/ajudavcapi/service/WeeklyProgressService.java

@@ -1,0 +1,11 @@
+ajudavcapi/domain/dto/auth/GoogleLoginDTO.class
+ajudavcapi/domain/dto/patient/UpdatePatientDTO.class
+ajudavcapi/domain/entity/DiseaseEntity.class
+ajudavcapi/domain/enums/DiseaseType.class
+ajudavcapi/domain/dto/group/UpdateGroupDTO.class
+ajudavcapi/domain/entity/StrokeEntity.class
+ajudavcapi/domain/dto/disease/DiseaseResponseDTO.class
+ajudavcapi/domain/dto/stroke/CreateStrokeDTO.class
+ajudavcapi/domain/dto/stroke/StrokeResponseDTO.class
+ajudavcapi/domain/repository/StrokeRepository.class
+ajudavcapi/domain/repository/DiseaseRepository.class
