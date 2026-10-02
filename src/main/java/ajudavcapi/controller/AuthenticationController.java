@@ -19,7 +19,7 @@ import com.google.api.client.json.gson.GsonFactory;
 
 import ajudavcapi.domain.dto.auth.AuthenticationDTO;
 import ajudavcapi.domain.dto.auth.TokenResponseDTO;
-import ajudavcapi.domain.dto.auth.GoogleLoginDTO; // Certifique-se de criar esta DTO
+import ajudavcapi.domain.dto.auth.GoogleLoginDTO;
 import ajudavcapi.domain.dto.user.UserRequestDTO;
 import ajudavcapi.domain.dto.user.UserResponseDTO;
 import ajudavcapi.domain.entity.UserEntity;
@@ -42,7 +42,6 @@ public class AuthenticationController {
     @Autowired
     private TokenService tokenService;
 
-    // Injeta o Client ID configurado no seu application.properties/yml
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;
 
@@ -56,12 +55,27 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponseDTO> register(@RequestBody @Valid UserRequestDTO data,
+    public ResponseEntity<?> register(
+            @RequestBody @Valid UserRequestDTO data,
             UriComponentsBuilder uriBuilder) {
-        UserEntity novoUsuario = userService.adicionarUsuario(data);
 
-        URI uri = uriBuilder.path("/user/{id}").buildAndExpand(novoUsuario.getId()).toUri();
-        return ResponseEntity.created(uri).body(new UserResponseDTO(novoUsuario));
+        try {
+            UserEntity novoUsuario = userService.adicionarUsuario(data);
+
+            URI uri = uriBuilder
+                    .path("/user/{id}")
+                    .buildAndExpand(novoUsuario.getId())
+                    .toUri();
+
+            return ResponseEntity
+                    .created(uri)
+                    .body(new UserResponseDTO(novoUsuario));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(e.getMessage());
+        }
     }
 
     @PostMapping("/google")

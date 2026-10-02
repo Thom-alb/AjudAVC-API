@@ -1,0 +1,4785 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.mvn/
+  wrapper/
+    maven-wrapper.properties
+src/
+  main/
+    java/
+      ajudavcapi/
+        config/
+          SecurityConfigurations.java
+          SecurityFilter.java
+        controller/
+          ActivityLogController.java
+          AuthenticationController.java
+          CalendarEventController.java
+          GroupController.java
+          GroupMemberController.java
+          MonthlySummaryController.java
+          PatientController.java
+          UserController.java
+          WeeklyProgressController.java
+        domain/
+          dto/
+            activitylog/
+              ActivityLogResponseDTO.java
+              CreateActivityLogDTO.java
+            auth/
+              AuthenticationDTO.java
+              GoogleLoginDTO.java
+              RegisterDTO.java
+              TokenResponseDTO.java
+            calendarEvent/
+              CalendarEventResponseDTO.java
+              CreateCalendarEventDTO.java
+            disease/
+              DiseaseResponseDTO.java
+            exception/
+              StandardErrorDTO.java
+            group/
+              CreateGroupDTO.java
+              GroupResponseDTO.java
+              JoinGroupDTO.java
+              UpdateGroupDTO.java
+            groupmember/
+              GroupMemberResponseDTO.java
+              UpdateGroupMemberRoleDTO.java
+            monthlySummary/
+              CreateMonthlySummaryDTO.java
+              MonthlySummaryResponseDTO.java
+            patient/
+              CreatePatientDTO.java
+              PatientResponseDTO.java
+              UpdatePatientDTO.java
+            stroke/
+              CreateStrokeDTO.java
+              StrokeResponseDTO.java
+            user/
+              UserRequestDTO.java
+              UserResponseDTO.java
+            weeklyProgress/
+              CreateWeeklyProgressDTO.java
+              WeeklyProgressResponseDTO.java
+          entity/
+            ActivityLogEntity.java
+            CalendarEventEntity.java
+            DeviceToken.java
+            DiseaseEntity.java
+            GroupEntity.java
+            GroupMemberEntity.java
+            MonthlySummaryEntity.java
+            PatientEntity.java
+            StrokeEntity.java
+            UserEntity.java
+            WeeklyProgressEntity.java
+          enums/
+            DiseaseType.java
+            GroupRole.java
+            MoodState.java
+            StrokeType.java
+          repository/
+            ActivityLogRepository.java
+            CalendarEventRepository.java
+            DeviceTokenRepository.java
+            DiseaseRepository.java
+            GroupMemberRepository.java
+            GroupRepository.java
+            MonthlySummaryRepository.java
+            PatientRepository.java
+            StrokeRepository.java
+            UserRepository.java
+            WeeklyProgressRepository.java
+        exception/
+          GlobalExceptionHandler.java
+        service/
+          ActivityLogService.java
+          AuthorizationService.java
+          CalendarEventService.java
+          GroupMemberService.java
+          GroupService.java
+          MonthlySummaryService.java
+          PatientService.java
+          TokenService.java
+          UserService.java
+          WeeklyProgressService.java
+        Application.java
+    resources/
+      application-test.properties
+      application.properties
+  test/
+    java/
+      ajudavcapi/
+        ApplicationTests.java
+.gitattributes
+.gitignore
+Dockerfile
+HELP.md
+mvnw
+mvnw.cmd
+pom.xml
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="src/main/java/ajudavcapi/controller/CalendarEventController.java">
+package ajudavcapi.controller;
+
+import java.net.URI;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import ajudavcapi.domain.dto.calendarEvent.CalendarEventResponseDTO;
+import ajudavcapi.domain.dto.calendarEvent.CreateCalendarEventDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.CalendarEventService;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/calendar-events")
+public class CalendarEventController {
+
+    @Autowired
+    private CalendarEventService calendarEventService;
+
+    // Criar um evento na agenda do grupo
+    @PostMapping
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<CalendarEventResponseDTO> createEvent(
+            @RequestBody @Valid CreateCalendarEventDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado,
+            UriComponentsBuilder uriBuilder) {
+
+        CalendarEventResponseDTO response = calendarEventService.createEvent(dto, userLogado);
+
+        URI uri = uriBuilder.path("/calendar-events/{id}").buildAndExpand(response.id()).toUri();
+        return ResponseEntity.created(uri).body(response);
+    }
+
+    // Listar todos os eventos da agenda do grupo do usuário
+    @GetMapping
+    public ResponseEntity<List<CalendarEventResponseDTO>> getGroupEvents(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        List<CalendarEventResponseDTO> events = calendarEventService.getGroupEvents(userLogado);
+        return ResponseEntity.ok(events);
+    }
+
+    // Marcar/Desmarcar evento como concluído (ex: medicamento tomado)
+    @PatchMapping("/{id}/toggle")
+    public ResponseEntity<CalendarEventResponseDTO> toggleEventCompletion(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        CalendarEventResponseDTO response = calendarEventService.toggleEventCompletion(id, userLogado);
+        return ResponseEntity.ok(response);
+    }
+
+    // Deletar um evento (Somente o Líder)
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('LEADER')")
+    public ResponseEntity<Void> deleteEvent(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        calendarEventService.deleteEvent(id, userLogado);
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/WeeklyProgressController.java">
+package ajudavcapi.controller;
+
+import java.net.URI;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.WeeklyProgressService;
+import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
+import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/weekly-progress")
+public class WeeklyProgressController {
+
+    @Autowired
+    private WeeklyProgressService weeklyProgressService;
+
+    // Registrar uma nova avaliação de progresso semanal (Líder ou Membro)
+    @PostMapping
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<WeeklyProgressResponseDTO> createProgress(
+            @RequestBody @Valid CreateWeeklyProgressDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado,
+            UriComponentsBuilder uriBuilder) {
+
+        WeeklyProgressResponseDTO response = weeklyProgressService.createProgress(dto, userLogado);
+
+        URI uri = uriBuilder.path("/weekly-progress/{id}").buildAndExpand(response.id()).toUri();
+        return ResponseEntity.created(uri).body(response);
+    }
+
+    // Listar o histórico de avaliações do grupo para renderizar os gráficos/evolução no app
+    @GetMapping
+    public ResponseEntity<List<WeeklyProgressResponseDTO>> getGroupProgressHistory(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        List<WeeklyProgressResponseDTO> history = weeklyProgressService.getGroupProgressHistory(userLogado);
+        return ResponseEntity.ok(history);
+    }
+
+    // Deletar um registro do histórico
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<Void> deleteProgress(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        weeklyProgressService.deleteProgress(id, userLogado);
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/activitylog/ActivityLogResponseDTO.java">
+package ajudavcapi.domain.dto.activitylog;
+
+import java.time.LocalDateTime;
+
+public record ActivityLogResponseDTO(
+    Long id,
+    String title,
+    String description,
+    LocalDateTime activityDate,
+    String status,
+    String category,
+    LocalDateTime createdAt,
+    String authorName,
+    Long groupId
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/activitylog/CreateActivityLogDTO.java">
+package ajudavcapi.domain.dto.activitylog;
+
+import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+public record CreateActivityLogDTO(
+    @NotBlank(message = "O título da atividade é obrigatório")
+    String title,
+
+    String description,
+
+    @NotNull(message = "A data e hora da atividade são obrigatórias")
+    LocalDateTime activityDate,
+
+    String category, // Ex: "MEDICATION", "HYGIENE", "FEEDING", "THERAPY"
+
+    String status    // PENDING (padrão), COMPLETED, CANCELED
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/auth/GoogleLoginDTO.java">
+package ajudavcapi.domain.dto.auth;
+
+import jakarta.validation.constraints.NotBlank;
+
+public record GoogleLoginDTO(@NotBlank String idToken) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/calendarEvent/CalendarEventResponseDTO.java">
+package ajudavcapi.domain.dto.calendarEvent;
+
+
+import java.time.LocalDateTime;
+
+
+public record CalendarEventResponseDTO(
+    Long id,
+    String title,
+    String description,
+    LocalDateTime eventDateTime,
+    String eventCategory,
+    boolean completed,
+    String createdByName,
+    Long groupId
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/calendarEvent/CreateCalendarEventDTO.java">
+package ajudavcapi.domain.dto.calendarEvent;
+
+
+import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+public record CreateCalendarEventDTO(
+    @NotBlank(message = "O título do evento é obrigatório")
+    String title,
+
+    String description,
+
+    @NotNull(message = "A data e hora do evento são obrigatórias")
+    @FutureOrPresent(message = "A data do evento não pode estar no passado")
+    LocalDateTime eventDateTime,
+
+    @NotNull(message = "A categoria do evento é obrigatório")
+    String eventCategory
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/disease/DiseaseResponseDTO.java">
+package ajudavcapi.domain.dto.disease;
+
+import ajudavcapi.domain.enums.DiseaseType;
+
+public record DiseaseResponseDTO(
+
+    Long id,
+    DiseaseType type
+
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/exception/StandardErrorDTO.java">
+package ajudavcapi.domain.dto.exception;
+
+import java.time.Instant;
+import java.util.Map;
+
+public record StandardErrorDTO(
+    Instant timestamp,
+    Integer status,
+    String error,
+    String message,
+    String path,
+    Map<String, String> validationErrors // Útil para erros de formulário (@Valid)
+) {
+    // Construtor utilitário para erros sem mapa de validação
+    public StandardErrorDTO(Instant timestamp, Integer status, String error, String message, String path) {
+        this(timestamp, status, error, message, path, null);
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/group/GroupResponseDTO.java">
+package ajudavcapi.domain.dto.group;
+
+import ajudavcapi.domain.entity.GroupEntity;
+
+public record GroupResponseDTO(
+    Long id,
+    String name,
+    String inviteCode,
+    String patientName
+) {
+    public GroupResponseDTO(GroupEntity entity) {
+        this(
+            entity.getId(),
+            entity.getName(),
+            entity.getInviteCode(),
+            entity.getPatient() != null ? entity.getPatient().getName() : null
+        );
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/group/JoinGroupDTO.java">
+package ajudavcapi.domain.dto.group;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record JoinGroupDTO(
+    @NotBlank(message = "O código de convite é obrigatório")
+    @Size(min = 6, max = 6, message = "O código de convite deve ter exatamente 6 caracteres")
+    String inviteCode
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/group/UpdateGroupDTO.java">
+package ajudavcapi.domain.dto.group;
+
+import ajudavcapi.domain.dto.patient.CreatePatientDTO; // ou um UpdatePatientDTO caso possua
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+
+public record UpdateGroupDTO(
+    @NotBlank(message = "O nome do grupo é obrigatório.")
+    String name,
+
+    @Valid
+    CreatePatientDTO patient
+) {
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/groupmember/GroupMemberResponseDTO.java">
+package ajudavcapi.domain.dto.groupmember;
+
+import java.time.LocalDateTime;
+import ajudavcapi.domain.enums.GroupRole;
+
+public record GroupMemberResponseDTO(
+    Long id,
+    Long userId,
+    String userName,
+    String userEmail,
+    GroupRole role,
+    LocalDateTime joinedAt
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/groupmember/UpdateGroupMemberRoleDTO.java">
+package ajudavcapi.domain.dto.groupmember;
+
+
+import ajudavcapi.domain.enums.GroupRole;
+import jakarta.validation.constraints.NotNull;
+
+public record UpdateGroupMemberRoleDTO(
+    @NotNull(message = "A nova função é obrigatória")
+    GroupRole role
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/monthlySummary/CreateMonthlySummaryDTO.java">
+package ajudavcapi.domain.dto.monthlySummary;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
+public record CreateMonthlySummaryDTO(
+    @NotNull(message = "O mês é obrigatório")
+    @Min(value = 1, message = "O mês deve ser entre 1 e 12")
+    @Max(value = 12, message = "O mês deve ser entre 1 e 12")
+    Integer month,
+
+    @NotNull(message = "O ano é obrigatório")
+    @Min(value = 2020, message = "Ano inválido")
+    Integer year,
+
+    Double averageCommunication,
+    Double averageMobility,
+    Double averageMemory,
+
+    Integer countAnimo,
+    Integer countFeliz,
+    Integer countApatia,
+    Integer countRaiva,
+    Integer countTriste
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/patient/UpdatePatientDTO.java">
+package ajudavcapi.domain.dto.patient;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import ajudavcapi.domain.dto.stroke.CreateStrokeDTO;
+import ajudavcapi.domain.enums.DiseaseType;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+
+public record UpdatePatientDTO(
+    @NotBlank(message = "O nome do paciente é obrigatório")
+    String name,
+
+    @NotNull(message = "A data de nascimento é obrigatória")
+    @PastOrPresent(message = "A data de nascimento não pode ser uma data futura")
+    LocalDate birthDate,
+
+    String importantDescription,
+
+    @Valid
+    List<CreateStrokeDTO> strokes,
+
+    List<DiseaseType> diseases
+) {
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/stroke/StrokeResponseDTO.java">
+package ajudavcapi.domain.dto.stroke;
+
+import java.time.LocalDate;
+
+import ajudavcapi.domain.enums.StrokeType;
+
+public record StrokeResponseDTO(
+
+    Long id,
+    StrokeType strokeType,
+    LocalDate strokeDate
+
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/weeklyProgress/CreateWeeklyProgressDTO.java">
+package ajudavcapi.domain.dto.weeklyProgress;
+
+import ajudavcapi.domain.enums.MoodState;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
+public record CreateWeeklyProgressDTO(
+    @NotNull(message = "A nota de comunicação é obrigatória")
+    @Min(value = 1, message = "A nota mínima é 1")
+    @Max(value = 10, message = "A nota máxima é 10")
+    Integer communicationScore,
+
+    @NotNull(message = "A nota de mobilidade é obrigatória")
+    @Min(value = 1, message = "A nota mínima é 1")
+    @Max(value = 10, message = "A nota máxima é 10")
+    Integer mobilityScore,
+
+    @NotNull(message = "A nota de memória é obrigatória")
+    @Min(value = 1, message = "A nota mínima é 1")
+    @Max(value = 10, message = "A nota máxima é 10")
+    Integer memoryScore,
+
+    @NotNull(message = "O estado de humor é obrigatório")
+    MoodState moodState,
+
+    String description
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/enums/DiseaseType.java">
+package ajudavcapi.domain.enums;
+
+public enum DiseaseType {
+
+    HIPERTENSAO,
+    COLESTEROL_ALTO,
+    DIABETES_TIPO_1,
+    DIABETES_TIPO_2,
+    OBESIDADE,
+    HIPOTIREOIDISMO,
+    OSTEOARTRITE,
+    OSTEOPOROSE,
+    ANSIEDADE,
+    DEPRESSAO,
+    ALZHEIMER,
+    INFARTO_AGUDO_DO_MIOCARDIO,
+    DPOC,
+    DEMENCIA,
+    CANCER
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/DiseaseRepository.java">
+package ajudavcapi.domain.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import ajudavcapi.domain.entity.DiseaseEntity;
+
+@Repository
+public interface DiseaseRepository extends JpaRepository<DiseaseEntity, Long> {
+
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/StrokeRepository.java">
+package ajudavcapi.domain.repository;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import ajudavcapi.domain.entity.StrokeEntity;
+
+@Repository
+public interface StrokeRepository extends JpaRepository<StrokeEntity, Long> {
+
+    List<StrokeEntity> findByPatientId(Long patientId);
+
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/exception/GlobalExceptionHandler.java">
+package ajudavcapi.exception;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    // Trata exceções genéricas/customizadas lançadas via RuntimeException
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    // Captura qualquer outro erro não tratado da aplicação
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno no servidor: " + ex.getMessage());
+    }
+
+    private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("message", message);
+
+        return ResponseEntity.status(status).body(body);
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/CalendarEventService.java">
+package ajudavcapi.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.dto.calendarEvent.CalendarEventResponseDTO;
+import ajudavcapi.domain.dto.calendarEvent.CreateCalendarEventDTO;
+import ajudavcapi.domain.entity.CalendarEventEntity;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.repository.CalendarEventRepository;
+import ajudavcapi.domain.repository.GroupRepository;
+
+@Service
+public class CalendarEventService {
+
+    @Autowired
+    private CalendarEventRepository calendarEventRepository;
+
+    @Autowired
+    private GroupRepository groupRepository;
+
+    @Transactional
+    public CalendarEventResponseDTO createEvent(CreateCalendarEventDTO dto, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        CalendarEventEntity event = new CalendarEventEntity();
+        event.setTitle(dto.title());
+        event.setDescription(dto.description());
+        event.setEventDateTime(dto.eventDateTime());
+        event.setEventCategory(dto.eventCategory());
+        event.setCompleted(false);
+        event.setCreatedBy(userLogado);
+        event.setGroup(group);
+
+        CalendarEventEntity savedEvent = calendarEventRepository.save(event);
+
+        return mapToDTO(savedEvent);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CalendarEventResponseDTO> getGroupEvents(UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        return calendarEventRepository.findByGroupIdOrderByEventDateTimeAsc(group.getId())
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    @Transactional
+    public CalendarEventResponseDTO toggleEventCompletion(Long eventId, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        CalendarEventEntity event = calendarEventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado."));
+
+        // Garante que o evento pertence ao mesmo grupo do usuário logado
+        if (!event.getGroup().getId().equals(group.getId())) {
+            throw new IllegalArgumentException("Acesso negado: Este evento pertence a outro grupo.");
+        }
+
+        // Alterna entre concluído e pendente
+        event.setCompleted(!event.isCompleted());
+        CalendarEventEntity updatedEvent = calendarEventRepository.save(event);
+
+        return mapToDTO(updatedEvent);
+    }
+
+    @Transactional
+    public void deleteEvent(Long eventId, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        CalendarEventEntity event = calendarEventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado."));
+
+        if (!event.getGroup().getId().equals(group.getId())) {
+            throw new IllegalArgumentException("Acesso negado: Este evento pertence a outro grupo.");
+        }
+
+        calendarEventRepository.delete(event);
+    }
+
+    private GroupEntity getUserGroup(UserEntity user) {
+        if (user.getGroup() != null) {
+            return user.getGroup();
+        }
+        return groupRepository.findByLeader(user)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
+    }
+
+    private CalendarEventResponseDTO mapToDTO(CalendarEventEntity entity) {
+        return new CalendarEventResponseDTO(
+            entity.getId(),
+            entity.getTitle(),
+            entity.getDescription(),
+            entity.getEventDateTime(),
+            entity.getEventCategory(),
+            entity.isCompleted(),
+            entity.getCreatedBy().getName(),
+            entity.getGroup().getId()
+        );
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/GroupMemberService.java">
+package ajudavcapi.service;
+
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.GroupMemberEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.enums.GroupRole;
+import ajudavcapi.domain.repository.GroupMemberRepository;
+import ajudavcapi.domain.repository.GroupRepository;
+import ajudavcapi.domain.dto.groupmember.GroupMemberResponseDTO;
+import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberRoleDTO;
+
+@Service
+public class GroupMemberService {
+
+    @Autowired
+    private GroupMemberRepository groupMemberRepository;
+
+    @Autowired
+    private GroupRepository groupRepository;
+
+    // Registra a associação do membro no grupo (usado ao criar ou entrar num grupo)
+    @Transactional
+    public GroupMemberEntity addMemberToGroup(GroupEntity group, UserEntity user, GroupRole role) {
+        if (groupMemberRepository.existsByGroupIdAndUserId(group.getId(), user.getId())) {
+            throw new IllegalArgumentException("O usuário já faz parte deste grupo.");
+        }
+
+        GroupMemberEntity member = new GroupMemberEntity();
+        member.setGroup(group);
+        member.setUser(user);
+        member.setRole(role);
+        member.setJoinedAt(LocalDateTime.now());
+
+        return groupMemberRepository.save(member);
+    }
+
+    // Listar todos os integrantes do grupo do usuário logado
+    @Transactional(readOnly = true)
+    public List<GroupMemberResponseDTO> getGroupMembers(UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        return groupMemberRepository.findByGroupId(group.getId())
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    // Alterar o papel/role de um integrante (Apenas o Líder do grupo pode fazer)
+    @Transactional
+    public GroupMemberResponseDTO updateMemberRole(Long memberId, UpdateGroupMemberRoleDTO dto, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        GroupMemberEntity member = groupMemberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("Membro do grupo não encontrado."));
+
+        if (!member.getGroup().getId().equals(group.getId())) {
+            throw new IllegalArgumentException("Acesso negado: Este integrante pertence a outro grupo.");
+        }
+
+        member.setRole(dto.role());
+        GroupMemberEntity updatedMember = groupMemberRepository.save(member);
+
+        return mapToDTO(updatedMember);
+    }
+
+    // Remover um integrante do grupo (Apenas o Líder ou o próprio membro saindo)
+    @Transactional
+    public void removeMember(Long memberId, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        GroupMemberEntity member = groupMemberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("Membro do grupo não encontrado."));
+
+        if (!member.getGroup().getId().equals(group.getId())) {
+            throw new IllegalArgumentException("Acesso negado: Este integrante pertence a outro grupo.");
+        }
+
+        // Evita que o Líder remova a si próprio deixando o grupo sem líder
+        if (member.getUser().getId().equals(group.getLeader().getId())) {
+            throw new IllegalArgumentException("O líder do grupo não pode ser removido diretamente.");
+        }
+
+        groupMemberRepository.delete(member);
+    }
+
+    private GroupEntity getUserGroup(UserEntity user) {
+        if (user.getGroup() != null) {
+            return user.getGroup();
+        }
+        return groupRepository.findByLeader(user)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
+    }
+
+    private GroupMemberResponseDTO mapToDTO(GroupMemberEntity entity) {
+        return new GroupMemberResponseDTO(
+            entity.getId(),
+            entity.getUser().getId(),
+            entity.getUser().getName(),
+            entity.getUser().getEmail(),
+            entity.getRole(),
+            entity.getJoinedAt()
+        );
+    }
+}
+</file>
+
+<file path=".gitattributes">
+/mvnw text eol=lf
+*.cmd text eol=crlf
+</file>
+
+<file path=".gitignore">
+# =========================================================================
+# Java & Build Tools (Maven)
+# =========================================================================
+# Pasta onde o Maven coloca os arquivos compilados e o .jar final
+target/
+*.class
+
+# Arquivos temporários de log do Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.nextVal
+pom.xml.backup
+release.properties
+
+# =========================================================================
+# IDEs & Editors (VS Code / IntelliJ)
+# =========================================================================
+.vscode/
+.idea/
+*.iml
+*.iws
+.settings/
+.classpath
+.project
+.factorypath
+
+# =========================================================================
+# Operating System (Windows)
+# =========================================================================
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# =========================================================================
+# Frontend / Node.js & Environment
+# =========================================================================
+node_modules/
+.env
+.env.local
+</file>
+
+<file path=".mvn/wrapper/maven-wrapper.properties">
+wrapperVersion=3.3.4
+distributionType=only-script
+distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.zip
+</file>
+
+<file path="src/main/java/ajudavcapi/config/SecurityFilter.java">
+package ajudavcapi.config;
+
+import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import ajudavcapi.domain.repository.UserRepository;
+import ajudavcapi.service.TokenService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+@Component
+public class SecurityFilter extends OncePerRequestFilter {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private TokenService tokenService;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        
+        var token = this.recoverToken(request);
+
+        if (token != null) {
+            try {
+                var subject = tokenService.validateToken(token);
+
+                // Garante que o subject retornado pelo JWT é um e-mail válido
+                if (subject != null && !subject.isBlank()) {
+                    // Busca o usuário de forma segura sem lançar RuntimeException no filtro
+                    var userOptional = userRepository.findByEmail(subject);
+
+                    if (userOptional.isPresent()) {
+                        UserDetails user = userOptional.get();
+                        var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+
+                        // Define a autenticação no contexto do Spring Security
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    }
+                }
+            } catch (Exception e) {
+                // Caso o token esteja expirado, corrompido ou o usuário não exista mais,
+                // limpa o contexto para garantir segurança sem quebrar a execução do servidor
+                SecurityContextHolder.clearContext();
+                logger.warn("Falha ao autenticar token JWT: " + e.getMessage());
+            }
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private String recoverToken(HttpServletRequest request) {
+        var authHeader = request.getHeader("Authorization");
+        
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        String token = authHeader.replace("Bearer ", "").trim();
+
+        // Trata envios acidentais de strings vazias ou palavras reservadas do JS
+        if (token.isEmpty() || token.equalsIgnoreCase("null") || token.equalsIgnoreCase("undefined")) {
+            return null;
+        }
+
+        return token;
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/ActivityLogController.java">
+package ajudavcapi.controller;
+
+import java.net.URI;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.ActivityLogService;
+import ajudavcapi.domain.dto.activitylog.ActivityLogResponseDTO;
+import ajudavcapi.domain.dto.activitylog.CreateActivityLogDTO;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/activity-logs")
+public class ActivityLogController {
+
+    @Autowired
+    private ActivityLogService activityLogService;
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<ActivityLogResponseDTO> createLog(
+            @RequestBody @Valid CreateActivityLogDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado,
+            UriComponentsBuilder uriBuilder) {
+
+        ActivityLogResponseDTO response = activityLogService.createLog(dto, userLogado);
+
+        URI uri = uriBuilder.path("/activity-logs/{id}").buildAndExpand(response.id()).toUri();
+        return ResponseEntity.created(uri).body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ActivityLogResponseDTO>> getGroupLogs(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        List<ActivityLogResponseDTO> logs = activityLogService.getGroupLogs(userLogado);
+        return ResponseEntity.ok(logs);
+    }
+
+    // Altera o status (ex: /activity-logs/1/status?status=COMPLETED)
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ActivityLogResponseDTO> updateStatus(
+            @PathVariable Long id,
+            @RequestParam String status,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        ActivityLogResponseDTO response = activityLogService.updateStatus(id, status, userLogado);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<Void> deleteLog(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        activityLogService.deleteLog(id, userLogado);
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/GroupMemberController.java">
+package ajudavcapi.controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import ajudavcapi.domain.dto.groupmember.GroupMemberResponseDTO;
+import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberRoleDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.GroupMemberService;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/group-members")
+public class GroupMemberController {
+
+    private final GroupMemberService groupMemberService;
+
+    // Injeção via Construtor explícita
+    public GroupMemberController(GroupMemberService groupMemberService) {
+        this.groupMemberService = groupMemberService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<GroupMemberResponseDTO>> getGroupMembers(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        List<GroupMemberResponseDTO> members = groupMemberService.getGroupMembers(userLogado);
+        return ResponseEntity.ok(members);
+    }
+
+    @PatchMapping("/{id}/role")
+    @PreAuthorize("hasRole('LEADER')")
+    public ResponseEntity<GroupMemberResponseDTO> updateMemberRole(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdateGroupMemberRoleDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupMemberResponseDTO response = groupMemberService.updateMemberRole(id, dto, userLogado);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('LEADER')")
+    public ResponseEntity<Void> removeMember(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        groupMemberService.removeMember(id, userLogado);
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/MonthlySummaryController.java">
+package ajudavcapi.controller;
+
+import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.MonthlySummaryService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/monthly-summaries")
+public class MonthlySummaryController {
+
+    @Autowired
+    private MonthlySummaryService monthlySummaryService;
+
+    // Retorna o resumo consolidado do mês (calculado em tempo real com base nos registros do mês)
+    @GetMapping("/filter")
+    public ResponseEntity<MonthlySummaryResponseDTO> getSummaryByMonthAndYear(
+            @RequestParam Integer month,
+            @RequestParam Integer year,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        MonthlySummaryResponseDTO response = monthlySummaryService.getOrCalculateSummary(month, year, userLogado);
+        return ResponseEntity.ok(response);
+    }
+
+    // Histórico de todos os resumos do grupo
+    @GetMapping
+    public ResponseEntity<List<MonthlySummaryResponseDTO>> getGroupSummaries(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        List<MonthlySummaryResponseDTO> summaries = monthlySummaryService.getGroupSummaries(userLogado);
+        return ResponseEntity.ok(summaries);
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/auth/TokenResponseDTO.java">
+package ajudavcapi.domain.dto.auth;
+
+public record TokenResponseDTO(String token) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/monthlySummary/MonthlySummaryResponseDTO.java">
+package ajudavcapi.domain.dto.monthlySummary;
+
+import java.time.LocalDateTime;
+
+public record MonthlySummaryResponseDTO(
+    Long id,
+    Integer month,
+    Integer year,
+    Double averageCommunication,
+    Double averageMobility,
+    Double averageMemory,
+    Integer countAnimo,
+    Integer countFeliz,
+    Integer countApatia,
+    Integer countRaiva,
+    Integer countTriste,
+    LocalDateTime createdAt,
+    Long groupId
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/patient/PatientResponseDTO.java">
+package ajudavcapi.domain.dto.patient;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import ajudavcapi.domain.dto.disease.DiseaseResponseDTO;
+import ajudavcapi.domain.dto.stroke.StrokeResponseDTO;
+
+public record PatientResponseDTO(
+
+    Long id,
+
+    String name,
+
+    LocalDate birthDate,
+
+    String importantDescription,
+
+    List<StrokeResponseDTO> strokes,
+
+    List<DiseaseResponseDTO> diseases,
+
+    Long groupId
+
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/stroke/CreateStrokeDTO.java">
+package ajudavcapi.domain.dto.stroke;
+
+import java.time.LocalDate;
+
+import ajudavcapi.domain.enums.StrokeType;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+
+public record CreateStrokeDTO(
+
+    @NotNull(message = "O tipo de AVC é obrigatório.")
+    StrokeType strokeType,
+
+    @NotNull(message = "A data do AVC é obrigatória.")
+    @PastOrPresent(message = "A data do AVC não pode ser uma data futura.")
+    LocalDate strokeDate
+
+) {
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/weeklyProgress/WeeklyProgressResponseDTO.java">
+package ajudavcapi.domain.dto.weeklyProgress;
+
+import java.time.LocalDateTime;
+import ajudavcapi.domain.enums.MoodState;
+
+public record WeeklyProgressResponseDTO(
+    Long id,
+    Integer communicationScore,
+    Integer mobilityScore,
+    Integer memoryScore,
+    MoodState moodState,
+    String description,
+    Integer weekOfMonth,
+    LocalDateTime createdAt,
+    String authorName,
+    Long groupId
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/ActivityLogEntity.java">
+package ajudavcapi.domain.entity;
+
+import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "activity_logs")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class ActivityLogEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // A atividade acontece dentro do contexto de um Grupo específico
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", nullable = false)
+    private GroupEntity group;
+
+    // O usuário/cuidador que criou ou realizou a atividade
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity user;
+
+    @Column(name = "title", nullable = false)
+    private String title; // Ex: "Medicação - Losartana 50mg", "Banho de Leito"
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description; // Detalhes completos para a consulta do CRUD
+
+    // Data e hora planejada ou em que a atividade ocorreu (usada para plotar no calendário)
+    @Column(name = "activity_date", nullable = false)
+    private LocalDateTime activityDate;
+
+    // Status do fluxo de controle (Ex: "PENDING", "COMPLETED", "CANCELED")
+    @Column(name = "status", nullable = false)
+    private String status = "PENDING"; 
+
+    @Column(name = "category")
+    private String category; // Ex: "MEDICATION", "HYGIENE", "FEEDING", "THERAPY"
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/CalendarEventEntity.java">
+package ajudavcapi.domain.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "calendar_events")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class CalendarEventEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "title", nullable = false)
+    private String title;
+
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "event_date_time", nullable = false)
+    private LocalDateTime eventDateTime;
+
+    @Column(name = "event_category", nullable = false)
+    private String eventCategory;
+
+    @Column(name = "completed", nullable = false)
+    private boolean completed = false;
+
+    // Quem criou o evento (Líder ou Membro da rede)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_user_id", nullable = false)
+    private UserEntity createdBy;
+
+    // Vínculo direto com o Grupo de Cuidado do paciente
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", nullable = false)
+    private GroupEntity group;
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/DiseaseEntity.java">
+package ajudavcapi.domain.entity;
+
+import ajudavcapi.domain.enums.DiseaseType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "diseases")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class DiseaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DiseaseType type;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patient_id")
+    private PatientEntity patient;
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/GroupMemberEntity.java">
+package ajudavcapi.domain.entity;
+
+import java.time.LocalDateTime;
+
+import ajudavcapi.domain.enums.GroupRole;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "group_members")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class GroupMemberEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // Grupo o qual o membro pertencem
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", nullable = false)
+    private GroupEntity group;
+
+    // O usuario que é membro do grupo
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity user;
+
+    // Função do membro
+    @Enumerated(EnumType.STRING)
+    @Column(name = "group_role", nullable = false)
+    private GroupRole role;
+
+    @Column(name = "joined_at", updatable = false)
+    private LocalDateTime joinedAt = LocalDateTime.now();
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/StrokeEntity.java">
+package ajudavcapi.domain.entity;
+
+import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import ajudavcapi.domain.enums.StrokeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "strokes")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class StrokeEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "stroke_type", nullable = false)
+    private StrokeType strokeType;
+
+    @Column(name = "stroke_date", nullable = false)
+    private LocalDate strokeDate;
+
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "patient_id", nullable = false)
+    private PatientEntity patient;
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/enums/MoodState.java">
+package ajudavcapi.domain.enums;
+
+public enum MoodState {
+    ANIMO,
+    FELIZ,
+    APATIA,
+    RAIVA,
+    TRISTE
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/ActivityLogService.java">
+package ajudavcapi.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.entity.ActivityLogEntity;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.repository.ActivityLogRepository;
+import ajudavcapi.domain.repository.GroupRepository;
+import ajudavcapi.domain.dto.activitylog.ActivityLogResponseDTO;
+import ajudavcapi.domain.dto.activitylog.CreateActivityLogDTO;
+
+
+@Service
+public class ActivityLogService {
+
+    @Autowired
+    private ActivityLogRepository activityLogRepository;
+
+    @Autowired
+    private GroupRepository groupRepository;
+
+    @Transactional
+    public ActivityLogResponseDTO createLog(CreateActivityLogDTO dto, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        ActivityLogEntity log = new ActivityLogEntity();
+        log.setTitle(dto.title());
+        log.setDescription(dto.description());
+        log.setActivityDate(dto.activityDate());
+        log.setCategory(dto.category());
+        log.setUser(userLogado);
+        log.setGroup(group);
+
+        // Se passar status customizado usa ele, senão mantém o default "PENDING"
+        if (dto.status() != null && !dto.status().isBlank()) {
+            log.setStatus(dto.status().toUpperCase());
+        }
+
+        ActivityLogEntity savedLog = activityLogRepository.save(log);
+
+        return mapToDTO(savedLog);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActivityLogResponseDTO> getGroupLogs(UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        return activityLogRepository.findByGroupIdOrderByActivityDateDesc(group.getId())
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    @Transactional
+    public ActivityLogResponseDTO updateStatus(Long logId, String newStatus, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        ActivityLogEntity log = activityLogRepository.findById(logId)
+                .orElseThrow(() -> new IllegalArgumentException("Atividade não encontrada."));
+
+        if (!log.getGroup().getId().equals(group.getId())) {
+            throw new IllegalArgumentException("Acesso negado: Esta atividade pertence a outro grupo.");
+        }
+
+        log.setStatus(newStatus.toUpperCase());
+        ActivityLogEntity updatedLog = activityLogRepository.save(log);
+
+        return mapToDTO(updatedLog);
+    }
+
+    @Transactional
+    public void deleteLog(Long logId, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        ActivityLogEntity log = activityLogRepository.findById(logId)
+                .orElseThrow(() -> new IllegalArgumentException("Atividade não encontrada."));
+
+        if (!log.getGroup().getId().equals(group.getId())) {
+            throw new IllegalArgumentException("Acesso negado: Esta atividade pertence a outro grupo.");
+        }
+
+        activityLogRepository.delete(log);
+    }
+
+    private GroupEntity getUserGroup(UserEntity user) {
+        if (user.getGroup() != null) {
+            return user.getGroup();
+        }
+        return groupRepository.findByLeader(user)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
+    }
+
+    private ActivityLogResponseDTO mapToDTO(ActivityLogEntity entity) {
+        return new ActivityLogResponseDTO(
+            entity.getId(),
+            entity.getTitle(),
+            entity.getDescription(),
+            entity.getActivityDate(),
+            entity.getStatus(),
+            entity.getCategory(),
+            entity.getCreatedAt(),
+            entity.getUser().getName(),
+            entity.getGroup().getId()
+        );
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/MonthlySummaryService.java">
+package ajudavcapi.service;
+
+import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
+import ajudavcapi.domain.entity.MonthlySummaryEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+import ajudavcapi.domain.enums.MoodState;
+import ajudavcapi.domain.repository.MonthlySummaryRepository;
+import ajudavcapi.domain.repository.WeeklyProgressRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+public class MonthlySummaryService {
+
+    @Autowired
+    private MonthlySummaryRepository monthlySummaryRepository;
+
+    @Autowired
+    private WeeklyProgressRepository weeklyProgressRepository;
+
+    @Transactional
+    public MonthlySummaryResponseDTO getOrCalculateSummary(Integer month, Integer year, UserEntity userLogado) {
+        Long groupId = userLogado.getGroup().getId();
+
+        // 1. Busca todas as avaliações registradas naquele mês para o grupo
+        List<WeeklyProgressEntity> progressList = weeklyProgressRepository.findByGroupIdAndMonthAndYear(groupId, month, year);
+
+        // 2. Se não houver registros no mês, retorna valores zerados
+        if (progressList.isEmpty()) {
+            return new MonthlySummaryResponseDTO(null, month, year, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, null, groupId);
+        }
+
+        // 3. Calcula as médias dos sliders
+        double avgComm = progressList.stream().mapToInt(WeeklyProgressEntity::getCommunicationScore).average().orElse(0.0);
+        double avgMob = progressList.stream().mapToInt(WeeklyProgressEntity::getMobilityScore).average().orElse(0.0);
+        double avgMem = progressList.stream().mapToInt(WeeklyProgressEntity::getMemoryScore).average().orElse(0.0);
+
+        // 4. Conta as ocorrências de cada humor no mês
+        int cAnimo = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.ANIMO).count();
+        int cFeliz = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.FELIZ).count();
+        int cApatia = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.APATIA).count();
+        int cRaiva = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.RAIVA).count();
+        int cTriste = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.TRISTE).count();
+
+        // 5. Atualiza ou cria o registro no banco para cache/histórico
+        MonthlySummaryEntity summary = monthlySummaryRepository.findByGroupIdAndMonthAndYear(groupId, month, year)
+                .orElseGet(() -> {
+                    MonthlySummaryEntity newEntity = new MonthlySummaryEntity();
+                    newEntity.setGroup(userLogado.getGroup());
+                    newEntity.setMonth(month);
+                    newEntity.setYear(year);
+                    return newEntity;
+                });
+
+        summary.setAverageCommunication(avgComm);
+        summary.setAverageMobility(avgMob);
+        summary.setAverageMemory(avgMem);
+        summary.setCountAnimo(cAnimo);
+        summary.setCountFeliz(cFeliz);
+        summary.setCountApatia(cApatia);
+        summary.setCountRaiva(cRaiva);
+        summary.setCountTriste(cTriste);
+
+        MonthlySummaryEntity saved = monthlySummaryRepository.save(summary);
+
+        return mapToDTO(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MonthlySummaryResponseDTO> getGroupSummaries(UserEntity userLogado) {
+        Long groupId = userLogado.getGroup().getId();
+        return monthlySummaryRepository.findByGroupIdOrderByYearDescMonthDesc(groupId)
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    private MonthlySummaryResponseDTO mapToDTO(MonthlySummaryEntity entity) {
+        return new MonthlySummaryResponseDTO(
+                entity.getId(),
+                entity.getMonth(),
+                entity.getYear(),
+                entity.getAverageCommunication(),
+                entity.getAverageMobility(),
+                entity.getAverageMemory(),
+                entity.getCountAnimo(),
+                entity.getCountFeliz(),
+                entity.getCountApatia(),
+                entity.getCountRaiva(),
+                entity.getCountTriste(),
+                entity.getCreatedAt(),
+                entity.getGroup().getId()
+        );
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/WeeklyProgressService.java">
+package ajudavcapi.service;
+
+import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
+import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+import ajudavcapi.domain.repository.WeeklyProgressRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.temporal.WeekFields;
+import java.util.List;
+import java.util.Locale;
+
+@Service
+public class WeeklyProgressService {
+
+    @Autowired
+    private WeeklyProgressRepository weeklyProgressRepository;
+
+    @Transactional
+    public WeeklyProgressResponseDTO createProgress(CreateWeeklyProgressDTO dto, UserEntity userLogado) {
+        WeeklyProgressEntity entity = new WeeklyProgressEntity();
+        
+        entity.setUser(userLogado);
+        entity.setGroup(userLogado.getGroup()); // Assume que o usuário pertence a um grupo
+        entity.setCommunicationScore(dto.communicationScore());
+        entity.setMobilityScore(dto.mobilityScore());
+        entity.setMemoryScore(dto.memoryScore());
+        entity.setMoodState(dto.moodState());
+        entity.setDescription(dto.description());
+
+        LocalDateTime now = LocalDateTime.now();
+        entity.setCreatedAt(now);
+
+        // Calcula dinamicamente a semana do mês (ex: 1ª, 2ª, 3ª ou 4ª semana)
+        int weekOfMonth = now.get(WeekFields.of(Locale.getDefault()).weekOfMonth());
+        entity.setWeekOfMonth(weekOfMonth);
+
+        WeeklyProgressEntity saved = weeklyProgressRepository.save(entity);
+        return mapToDTO(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<WeeklyProgressResponseDTO> getGroupProgressHistory(UserEntity userLogado) {
+        Long groupId = userLogado.getGroup().getId();
+        return weeklyProgressRepository.findByGroupIdOrderByCreatedAtDesc(groupId)
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    @Transactional
+    public void deleteProgress(Long id, UserEntity userLogado) {
+        WeeklyProgressEntity entity = weeklyProgressRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Registro de progresso não encontrado"));
+
+        // Validação de segurança: apenas membros do mesmo grupo podem excluir
+        if (!entity.getGroup().getId().equals(userLogado.getGroup().getId())) {
+            throw new RuntimeException("Acesso negado: registro pertence a outro grupo");
+        }
+
+        weeklyProgressRepository.delete(entity);
+    }
+
+    private WeeklyProgressResponseDTO mapToDTO(WeeklyProgressEntity entity) {
+        return new WeeklyProgressResponseDTO(
+                entity.getId(),
+                entity.getCommunicationScore(),
+                entity.getMobilityScore(),
+                entity.getMemoryScore(),
+                entity.getMoodState(),
+                entity.getDescription(),
+                entity.getWeekOfMonth(),
+                entity.getCreatedAt(),
+                entity.getUser().getName(), // Ou getUsername()
+                entity.getGroup().getId()
+        );
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/Application.java">
+package ajudavcapi;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class Application {
+
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+	}
+
+}
+</file>
+
+<file path="src/main/resources/application-test.properties">
+# --- CONEXÃO BANCO DE TESTE (H2 EM MEMÓRIA) ---
+spring.datasource.url=jdbc:h2:mem:ajudavcdb_test;DB_CLOSE_DELAY=-1;MODE=MySQL
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+
+# Define a plataforma específica para o H2 trabalhar interpretando comandos padrão MySQL
+spring.sql.init.mode=always
+
+# Mostra no console os comandos SQL executados em tempo real
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# Logging (Opcional)
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+logging.level.org.hibernate.orm.jdbc=ERROR
+
+# Configurações de Servidor
+server.address=0.0.0.0
+server.port=8055
+</file>
+
+<file path="src/test/java/ajudavcapi/ApplicationTests.java">
+package ajudavcapi;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class ApplicationTests {
+
+	@Test
+	void contextLoads() {
+	}
+
+}
+</file>
+
+<file path="Dockerfile">
+# ---------- Build ----------
+FROM eclipse-temurin:21-jdk-jammy AS build
+
+WORKDIR /app
+
+# Copia arquivos do Maven
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+
+RUN chmod +x mvnw
+RUN ./mvnw dependency:go-offline
+
+# Copia o código
+COPY src src
+
+# Gera o JAR
+RUN ./mvnw clean package -DskipTests
+
+# ---------- Runtime ----------
+FROM eclipse-temurin:21-jre-jammy
+
+WORKDIR /app
+
+COPY --from=build /app/target/*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+</file>
+
+<file path="HELP.md">
+# Read Me First
+The following was discovered as part of building this project:
+
+* The original package name 'ajudavcapi.' is invalid and this project uses 'ajudavcapi' instead.
+
+# Getting Started
+
+### Reference Documentation
+For further reference, please consider the following sections:
+
+* [Official Apache Maven documentation](https://maven.apache.org/guides/index.html)
+* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/4.1.0/maven-plugin)
+* [Create an OCI image](https://docs.spring.io/spring-boot/4.1.0/maven-plugin/build-image.html)
+* [Spring Web](https://docs.spring.io/spring-boot/4.1.0/reference/web/servlet.html)
+* [Validation](https://docs.spring.io/spring-boot/4.1.0/reference/io/validation.html)
+* [Spring Data JPA](https://docs.spring.io/spring-boot/4.1.0/reference/data/sql.html#data.sql.jpa-and-spring-data)
+
+### Guides
+The following guides illustrate how to use some features concretely:
+
+* [Building a RESTful Web Service](https://spring.io/guides/gs/rest-service/)
+* [Serving Web Content with Spring MVC](https://spring.io/guides/gs/serving-web-content/)
+* [Building REST services with Spring](https://spring.io/guides/tutorials/rest/)
+* [Validation](https://spring.io/guides/gs/validating-form-input/)
+* [Accessing Data with JPA](https://spring.io/guides/gs/accessing-data-jpa/)
+
+### Maven Parent overrides
+
+Due to Maven's design, elements are inherited from the parent POM to the project POM.
+While most of the inheritance is fine, it also inherits unwanted elements like `<license>` and `<developers>` from the parent.
+To prevent this, the project POM contains empty overrides for these elements.
+If you manually switch to a different parent and actually want the inheritance, you need to remove those overrides.
+</file>
+
+<file path="mvnw">
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup batch script, version 3.3.4
+#
+# Optional ENV vars
+# -----------------
+#   JAVA_HOME - location of a JDK home dir, required when download maven via java source
+#   MVNW_REPOURL - repo url base for downloading maven distribution
+#   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+#   MVNW_VERBOSE - true: enable verbose log; debug: trace the mvnw script; others: silence the output
+# ----------------------------------------------------------------------------
+
+set -euf
+[ "${MVNW_VERBOSE-}" != debug ] || set -x
+
+# OS specific support.
+native_path() { printf %s\\n "$1"; }
+case "$(uname)" in
+CYGWIN* | MINGW*)
+  [ -z "${JAVA_HOME-}" ] || JAVA_HOME="$(cygpath --unix "$JAVA_HOME")"
+  native_path() { cygpath --path --windows "$1"; }
+  ;;
+esac
+
+# set JAVACMD and JAVACCMD
+set_java_home() {
+  # For Cygwin and MinGW, ensure paths are in Unix format before anything is touched
+  if [ -n "${JAVA_HOME-}" ]; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ]; then
+      # IBM's JDK on AIX uses strange locations for the executables
+      JAVACMD="$JAVA_HOME/jre/sh/java"
+      JAVACCMD="$JAVA_HOME/jre/sh/javac"
+    else
+      JAVACMD="$JAVA_HOME/bin/java"
+      JAVACCMD="$JAVA_HOME/bin/javac"
+
+      if [ ! -x "$JAVACMD" ] || [ ! -x "$JAVACCMD" ]; then
+        echo "The JAVA_HOME environment variable is not defined correctly, so mvnw cannot run." >&2
+        echo "JAVA_HOME is set to \"$JAVA_HOME\", but \"\$JAVA_HOME/bin/java\" or \"\$JAVA_HOME/bin/javac\" does not exist." >&2
+        return 1
+      fi
+    fi
+  else
+    JAVACMD="$(
+      'set' +e
+      'unset' -f command 2>/dev/null
+      'command' -v java
+    )" || :
+    JAVACCMD="$(
+      'set' +e
+      'unset' -f command 2>/dev/null
+      'command' -v javac
+    )" || :
+
+    if [ ! -x "${JAVACMD-}" ] || [ ! -x "${JAVACCMD-}" ]; then
+      echo "The java/javac command does not exist in PATH nor is JAVA_HOME set, so mvnw cannot run." >&2
+      return 1
+    fi
+  fi
+}
+
+# hash string like Java String::hashCode
+hash_string() {
+  str="${1:-}" h=0
+  while [ -n "$str" ]; do
+    char="${str%"${str#?}"}"
+    h=$(((h * 31 + $(LC_CTYPE=C printf %d "'$char")) % 4294967296))
+    str="${str#?}"
+  done
+  printf %x\\n $h
+}
+
+verbose() { :; }
+[ "${MVNW_VERBOSE-}" != true ] || verbose() { printf %s\\n "${1-}"; }
+
+die() {
+  printf %s\\n "$1" >&2
+  exit 1
+}
+
+trim() {
+  # MWRAPPER-139:
+  #   Trims trailing and leading whitespace, carriage returns, tabs, and linefeeds.
+  #   Needed for removing poorly interpreted newline sequences when running in more
+  #   exotic environments such as mingw bash on Windows.
+  printf "%s" "${1}" | tr -d '[:space:]'
+}
+
+scriptDir="$(dirname "$0")"
+scriptName="$(basename "$0")"
+
+# parse distributionUrl and optional distributionSha256Sum, requires .mvn/wrapper/maven-wrapper.properties
+while IFS="=" read -r key value; do
+  case "${key-}" in
+  distributionUrl) distributionUrl=$(trim "${value-}") ;;
+  distributionSha256Sum) distributionSha256Sum=$(trim "${value-}") ;;
+  esac
+done <"$scriptDir/.mvn/wrapper/maven-wrapper.properties"
+[ -n "${distributionUrl-}" ] || die "cannot read distributionUrl property in $scriptDir/.mvn/wrapper/maven-wrapper.properties"
+
+case "${distributionUrl##*/}" in
+maven-mvnd-*bin.*)
+  MVN_CMD=mvnd.sh _MVNW_REPO_PATTERN=/maven/mvnd/
+  case "${PROCESSOR_ARCHITECTURE-}${PROCESSOR_ARCHITEW6432-}:$(uname -a)" in
+  *AMD64:CYGWIN* | *AMD64:MINGW*) distributionPlatform=windows-amd64 ;;
+  :Darwin*x86_64) distributionPlatform=darwin-amd64 ;;
+  :Darwin*arm64) distributionPlatform=darwin-aarch64 ;;
+  :Linux*x86_64*) distributionPlatform=linux-amd64 ;;
+  *)
+    echo "Cannot detect native platform for mvnd on $(uname)-$(uname -m), use pure java version" >&2
+    distributionPlatform=linux-amd64
+    ;;
+  esac
+  distributionUrl="${distributionUrl%-bin.*}-$distributionPlatform.zip"
+  ;;
+maven-mvnd-*) MVN_CMD=mvnd.sh _MVNW_REPO_PATTERN=/maven/mvnd/ ;;
+*) MVN_CMD="mvn${scriptName#mvnw}" _MVNW_REPO_PATTERN=/org/apache/maven/ ;;
+esac
+
+# apply MVNW_REPOURL and calculate MAVEN_HOME
+# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-<version>,maven-mvnd-<version>-<platform>}/<hash>
+[ -z "${MVNW_REPOURL-}" ] || distributionUrl="$MVNW_REPOURL$_MVNW_REPO_PATTERN${distributionUrl#*"$_MVNW_REPO_PATTERN"}"
+distributionUrlName="${distributionUrl##*/}"
+distributionUrlNameMain="${distributionUrlName%.*}"
+distributionUrlNameMain="${distributionUrlNameMain%-bin}"
+MAVEN_USER_HOME="${MAVEN_USER_HOME:-${HOME}/.m2}"
+MAVEN_HOME="${MAVEN_USER_HOME}/wrapper/dists/${distributionUrlNameMain-}/$(hash_string "$distributionUrl")"
+
+exec_maven() {
+  unset MVNW_VERBOSE MVNW_USERNAME MVNW_PASSWORD MVNW_REPOURL || :
+  exec "$MAVEN_HOME/bin/$MVN_CMD" "$@" || die "cannot exec $MAVEN_HOME/bin/$MVN_CMD"
+}
+
+if [ -d "$MAVEN_HOME" ]; then
+  verbose "found existing MAVEN_HOME at $MAVEN_HOME"
+  exec_maven "$@"
+fi
+
+case "${distributionUrl-}" in
+*?-bin.zip | *?maven-mvnd-?*-?*.zip) ;;
+*) die "distributionUrl is not valid, must match *-bin.zip or maven-mvnd-*.zip, but found '${distributionUrl-}'" ;;
+esac
+
+# prepare tmp dir
+if TMP_DOWNLOAD_DIR="$(mktemp -d)" && [ -d "$TMP_DOWNLOAD_DIR" ]; then
+  clean() { rm -rf -- "$TMP_DOWNLOAD_DIR"; }
+  trap clean HUP INT TERM EXIT
+else
+  die "cannot create temp dir"
+fi
+
+mkdir -p -- "${MAVEN_HOME%/*}"
+
+# Download and Install Apache Maven
+verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
+verbose "Downloading from: $distributionUrl"
+verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
+
+# select .zip or .tar.gz
+if ! command -v unzip >/dev/null; then
+  distributionUrl="${distributionUrl%.zip}.tar.gz"
+  distributionUrlName="${distributionUrl##*/}"
+fi
+
+# verbose opt
+__MVNW_QUIET_WGET=--quiet __MVNW_QUIET_CURL=--silent __MVNW_QUIET_UNZIP=-q __MVNW_QUIET_TAR=''
+[ "${MVNW_VERBOSE-}" != true ] || __MVNW_QUIET_WGET='' __MVNW_QUIET_CURL='' __MVNW_QUIET_UNZIP='' __MVNW_QUIET_TAR=v
+
+# normalize http auth
+case "${MVNW_PASSWORD:+has-password}" in
+'') MVNW_USERNAME='' MVNW_PASSWORD='' ;;
+has-password) [ -n "${MVNW_USERNAME-}" ] || MVNW_USERNAME='' MVNW_PASSWORD='' ;;
+esac
+
+if [ -z "${MVNW_USERNAME-}" ] && command -v wget >/dev/null; then
+  verbose "Found wget ... using wget"
+  wget ${__MVNW_QUIET_WGET:+"$__MVNW_QUIET_WGET"} "$distributionUrl" -O "$TMP_DOWNLOAD_DIR/$distributionUrlName" || die "wget: Failed to fetch $distributionUrl"
+elif [ -z "${MVNW_USERNAME-}" ] && command -v curl >/dev/null; then
+  verbose "Found curl ... using curl"
+  curl ${__MVNW_QUIET_CURL:+"$__MVNW_QUIET_CURL"} -f -L -o "$TMP_DOWNLOAD_DIR/$distributionUrlName" "$distributionUrl" || die "curl: Failed to fetch $distributionUrl"
+elif set_java_home; then
+  verbose "Falling back to use Java to download"
+  javaSource="$TMP_DOWNLOAD_DIR/Downloader.java"
+  targetZip="$TMP_DOWNLOAD_DIR/$distributionUrlName"
+  cat >"$javaSource" <<-END
+	public class Downloader extends java.net.Authenticator
+	{
+	  protected java.net.PasswordAuthentication getPasswordAuthentication()
+	  {
+	    return new java.net.PasswordAuthentication( System.getenv( "MVNW_USERNAME" ), System.getenv( "MVNW_PASSWORD" ).toCharArray() );
+	  }
+	  public static void main( String[] args ) throws Exception
+	  {
+	    setDefault( new Downloader() );
+	    java.nio.file.Files.copy( java.net.URI.create( args[0] ).toURL().openStream(), java.nio.file.Paths.get( args[1] ).toAbsolutePath().normalize() );
+	  }
+	}
+	END
+  # For Cygwin/MinGW, switch paths to Windows format before running javac and java
+  verbose " - Compiling Downloader.java ..."
+  "$(native_path "$JAVACCMD")" "$(native_path "$javaSource")" || die "Failed to compile Downloader.java"
+  verbose " - Running Downloader.java ..."
+  "$(native_path "$JAVACMD")" -cp "$(native_path "$TMP_DOWNLOAD_DIR")" Downloader "$distributionUrl" "$(native_path "$targetZip")"
+fi
+
+# If specified, validate the SHA-256 sum of the Maven distribution zip file
+if [ -n "${distributionSha256Sum-}" ]; then
+  distributionSha256Result=false
+  if [ "$MVN_CMD" = mvnd.sh ]; then
+    echo "Checksum validation is not supported for maven-mvnd." >&2
+    echo "Please disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties." >&2
+    exit 1
+  elif command -v sha256sum >/dev/null; then
+    if echo "$distributionSha256Sum  $TMP_DOWNLOAD_DIR/$distributionUrlName" | sha256sum -c - >/dev/null 2>&1; then
+      distributionSha256Result=true
+    fi
+  elif command -v shasum >/dev/null; then
+    if echo "$distributionSha256Sum  $TMP_DOWNLOAD_DIR/$distributionUrlName" | shasum -a 256 -c >/dev/null 2>&1; then
+      distributionSha256Result=true
+    fi
+  else
+    echo "Checksum validation was requested but neither 'sha256sum' or 'shasum' are available." >&2
+    echo "Please install either command, or disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties." >&2
+    exit 1
+  fi
+  if [ $distributionSha256Result = false ]; then
+    echo "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised." >&2
+    echo "If you updated your Maven version, you need to update the specified distributionSha256Sum property." >&2
+    exit 1
+  fi
+fi
+
+# unzip and move
+if command -v unzip >/dev/null; then
+  unzip ${__MVNW_QUIET_UNZIP:+"$__MVNW_QUIET_UNZIP"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -d "$TMP_DOWNLOAD_DIR" || die "failed to unzip"
+else
+  tar xzf${__MVNW_QUIET_TAR:+"$__MVNW_QUIET_TAR"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -C "$TMP_DOWNLOAD_DIR" || die "failed to untar"
+fi
+
+# Find the actual extracted directory name (handles snapshots where filename != directory name)
+actualDistributionDir=""
+
+# First try the expected directory name (for regular distributions)
+if [ -d "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain" ]; then
+  if [ -f "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain/bin/$MVN_CMD" ]; then
+    actualDistributionDir="$distributionUrlNameMain"
+  fi
+fi
+
+# If not found, search for any directory with the Maven executable (for snapshots)
+if [ -z "$actualDistributionDir" ]; then
+  # enable globbing to iterate over items
+  set +f
+  for dir in "$TMP_DOWNLOAD_DIR"/*; do
+    if [ -d "$dir" ]; then
+      if [ -f "$dir/bin/$MVN_CMD" ]; then
+        actualDistributionDir="$(basename "$dir")"
+        break
+      fi
+    fi
+  done
+  set -f
+fi
+
+if [ -z "$actualDistributionDir" ]; then
+  verbose "Contents of $TMP_DOWNLOAD_DIR:"
+  verbose "$(ls -la "$TMP_DOWNLOAD_DIR")"
+  die "Could not find Maven distribution directory in extracted archive"
+fi
+
+verbose "Found extracted Maven distribution directory: $actualDistributionDir"
+printf %s\\n "$distributionUrl" >"$TMP_DOWNLOAD_DIR/$actualDistributionDir/mvnw.url"
+mv -- "$TMP_DOWNLOAD_DIR/$actualDistributionDir" "$MAVEN_HOME" || [ -d "$MAVEN_HOME" ] || die "fail to move MAVEN_HOME"
+
+clean || :
+exec_maven "$@"
+</file>
+
+<file path="mvnw.cmd">
+<# : batch portion
+@REM ----------------------------------------------------------------------------
+@REM Licensed to the Apache Software Foundation (ASF) under one
+@REM or more contributor license agreements.  See the NOTICE file
+@REM distributed with this work for additional information
+@REM regarding copyright ownership.  The ASF licenses this file
+@REM to you under the Apache License, Version 2.0 (the
+@REM "License"); you may not use this file except in compliance
+@REM with the License.  You may obtain a copy of the License at
+@REM
+@REM    http://www.apache.org/licenses/LICENSE-2.0
+@REM
+@REM Unless required by applicable law or agreed to in writing,
+@REM software distributed under the License is distributed on an
+@REM "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+@REM KIND, either express or implied.  See the License for the
+@REM specific language governing permissions and limitations
+@REM under the License.
+@REM ----------------------------------------------------------------------------
+
+@REM ----------------------------------------------------------------------------
+@REM Apache Maven Wrapper startup batch script, version 3.3.4
+@REM
+@REM Optional ENV vars
+@REM   MVNW_REPOURL - repo url base for downloading maven distribution
+@REM   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+@REM   MVNW_VERBOSE - true: enable verbose log; others: silence the output
+@REM ----------------------------------------------------------------------------
+
+@IF "%__MVNW_ARG0_NAME__%"=="" (SET __MVNW_ARG0_NAME__=%~nx0)
+@SET __MVNW_CMD__=
+@SET __MVNW_ERROR__=
+@SET __MVNW_PSMODULEP_SAVE=%PSModulePath%
+@SET PSModulePath=
+@FOR /F "usebackq tokens=1* delims==" %%A IN (`powershell -noprofile "& {$scriptDir='%~dp0'; $script='%__MVNW_ARG0_NAME__%'; icm -ScriptBlock ([Scriptblock]::Create((Get-Content -Raw '%~f0'))) -NoNewScope}"`) DO @(
+  IF "%%A"=="MVN_CMD" (set __MVNW_CMD__=%%B) ELSE IF "%%B"=="" (echo %%A) ELSE (echo %%A=%%B)
+)
+@SET PSModulePath=%__MVNW_PSMODULEP_SAVE%
+@SET __MVNW_PSMODULEP_SAVE=
+@SET __MVNW_ARG0_NAME__=
+@SET MVNW_USERNAME=
+@SET MVNW_PASSWORD=
+@IF NOT "%__MVNW_CMD__%"=="" ("%__MVNW_CMD__%" %*)
+@echo Cannot start maven from wrapper >&2 && exit /b 1
+@GOTO :EOF
+: end batch / begin powershell #>
+
+$ErrorActionPreference = "Stop"
+if ($env:MVNW_VERBOSE -eq "true") {
+  $VerbosePreference = "Continue"
+}
+
+# calculate distributionUrl, requires .mvn/wrapper/maven-wrapper.properties
+$distributionUrl = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionUrl
+if (!$distributionUrl) {
+  Write-Error "cannot read distributionUrl property in $scriptDir/.mvn/wrapper/maven-wrapper.properties"
+}
+
+switch -wildcard -casesensitive ( $($distributionUrl -replace '^.*/','') ) {
+  "maven-mvnd-*" {
+    $USE_MVND = $true
+    $distributionUrl = $distributionUrl -replace '-bin\.[^.]*$',"-windows-amd64.zip"
+    $MVN_CMD = "mvnd.cmd"
+    break
+  }
+  default {
+    $USE_MVND = $false
+    $MVN_CMD = $script -replace '^mvnw','mvn'
+    break
+  }
+}
+
+# apply MVNW_REPOURL and calculate MAVEN_HOME
+# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-<version>,maven-mvnd-<version>-<platform>}/<hash>
+if ($env:MVNW_REPOURL) {
+  $MVNW_REPO_PATTERN = if ($USE_MVND -eq $False) { "/org/apache/maven/" } else { "/maven/mvnd/" }
+  $distributionUrl = "$env:MVNW_REPOURL$MVNW_REPO_PATTERN$($distributionUrl -replace "^.*$MVNW_REPO_PATTERN",'')"
+}
+$distributionUrlName = $distributionUrl -replace '^.*/',''
+$distributionUrlNameMain = $distributionUrlName -replace '\.[^.]*$','' -replace '-bin$',''
+
+$MAVEN_M2_PATH = "$HOME/.m2"
+if ($env:MAVEN_USER_HOME) {
+  $MAVEN_M2_PATH = "$env:MAVEN_USER_HOME"
+}
+
+if (-not (Test-Path -Path $MAVEN_M2_PATH)) {
+    New-Item -Path $MAVEN_M2_PATH -ItemType Directory | Out-Null
+}
+
+$MAVEN_WRAPPER_DISTS = $null
+if ((Get-Item $MAVEN_M2_PATH).Target[0] -eq $null) {
+  $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_PATH/wrapper/dists"
+} else {
+  $MAVEN_WRAPPER_DISTS = (Get-Item $MAVEN_M2_PATH).Target[0] + "/wrapper/dists"
+}
+
+$MAVEN_HOME_PARENT = "$MAVEN_WRAPPER_DISTS/$distributionUrlNameMain"
+$MAVEN_HOME_NAME = ([System.Security.Cryptography.SHA256]::Create().ComputeHash([byte[]][char[]]$distributionUrl) | ForEach-Object {$_.ToString("x2")}) -join ''
+$MAVEN_HOME = "$MAVEN_HOME_PARENT/$MAVEN_HOME_NAME"
+
+if (Test-Path -Path "$MAVEN_HOME" -PathType Container) {
+  Write-Verbose "found existing MAVEN_HOME at $MAVEN_HOME"
+  Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+  exit $?
+}
+
+if (! $distributionUrlNameMain -or ($distributionUrlName -eq $distributionUrlNameMain)) {
+  Write-Error "distributionUrl is not valid, must end with *-bin.zip, but found $distributionUrl"
+}
+
+# prepare tmp dir
+$TMP_DOWNLOAD_DIR_HOLDER = New-TemporaryFile
+$TMP_DOWNLOAD_DIR = New-Item -Itemtype Directory -Path "$TMP_DOWNLOAD_DIR_HOLDER.dir"
+$TMP_DOWNLOAD_DIR_HOLDER.Delete() | Out-Null
+trap {
+  if ($TMP_DOWNLOAD_DIR.Exists) {
+    try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
+    catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+  }
+}
+
+New-Item -Itemtype Directory -Path "$MAVEN_HOME_PARENT" -Force | Out-Null
+
+# Download and Install Apache Maven
+Write-Verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
+Write-Verbose "Downloading from: $distributionUrl"
+Write-Verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
+
+$webclient = New-Object System.Net.WebClient
+if ($env:MVNW_USERNAME -and $env:MVNW_PASSWORD) {
+  $webclient.Credentials = New-Object System.Net.NetworkCredential($env:MVNW_USERNAME, $env:MVNW_PASSWORD)
+}
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$webclient.DownloadFile($distributionUrl, "$TMP_DOWNLOAD_DIR/$distributionUrlName") | Out-Null
+
+# If specified, validate the SHA-256 sum of the Maven distribution zip file
+$distributionSha256Sum = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionSha256Sum
+if ($distributionSha256Sum) {
+  if ($USE_MVND) {
+    Write-Error "Checksum validation is not supported for maven-mvnd. `nPlease disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties."
+  }
+  Import-Module $PSHOME\Modules\Microsoft.PowerShell.Utility -Function Get-FileHash
+  if ((Get-FileHash "$TMP_DOWNLOAD_DIR/$distributionUrlName" -Algorithm SHA256).Hash.ToLower() -ne $distributionSha256Sum) {
+    Write-Error "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised. If you updated your Maven version, you need to update the specified distributionSha256Sum property."
+  }
+}
+
+# unzip and move
+Expand-Archive "$TMP_DOWNLOAD_DIR/$distributionUrlName" -DestinationPath "$TMP_DOWNLOAD_DIR" | Out-Null
+
+# Find the actual extracted directory name (handles snapshots where filename != directory name)
+$actualDistributionDir = ""
+
+# First try the expected directory name (for regular distributions)
+$expectedPath = Join-Path "$TMP_DOWNLOAD_DIR" "$distributionUrlNameMain"
+$expectedMvnPath = Join-Path "$expectedPath" "bin/$MVN_CMD"
+if ((Test-Path -Path $expectedPath -PathType Container) -and (Test-Path -Path $expectedMvnPath -PathType Leaf)) {
+  $actualDistributionDir = $distributionUrlNameMain
+}
+
+# If not found, search for any directory with the Maven executable (for snapshots)
+if (!$actualDistributionDir) {
+  Get-ChildItem -Path "$TMP_DOWNLOAD_DIR" -Directory | ForEach-Object {
+    $testPath = Join-Path $_.FullName "bin/$MVN_CMD"
+    if (Test-Path -Path $testPath -PathType Leaf) {
+      $actualDistributionDir = $_.Name
+    }
+  }
+}
+
+if (!$actualDistributionDir) {
+  Write-Error "Could not find Maven distribution directory in extracted archive"
+}
+
+Write-Verbose "Found extracted Maven distribution directory: $actualDistributionDir"
+Rename-Item -Path "$TMP_DOWNLOAD_DIR/$actualDistributionDir" -NewName $MAVEN_HOME_NAME | Out-Null
+try {
+  Move-Item -Path "$TMP_DOWNLOAD_DIR/$MAVEN_HOME_NAME" -Destination $MAVEN_HOME_PARENT | Out-Null
+} catch {
+  if (! (Test-Path -Path "$MAVEN_HOME" -PathType Container)) {
+    Write-Error "fail to move MAVEN_HOME"
+  }
+} finally {
+  try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
+  catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+}
+
+Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/GroupController.java">
+package ajudavcapi.controller;
+
+import java.net.URI;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import ajudavcapi.domain.dto.group.CreateGroupDTO;
+import ajudavcapi.domain.dto.group.GroupResponseDTO;
+import ajudavcapi.domain.dto.group.JoinGroupDTO;
+import ajudavcapi.domain.dto.group.UpdateGroupDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.GroupService;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/groups")
+public class GroupController {
+
+    private final GroupService groupService;
+
+    public GroupController(GroupService groupService) {
+        this.groupService = groupService;
+    }
+
+    /**
+     * Criar um novo Grupo de Cuidado.
+     */
+    @PostMapping
+    public ResponseEntity<GroupResponseDTO> createGroup(
+            @RequestBody @Valid CreateGroupDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado,
+            UriComponentsBuilder uriBuilder) {
+
+        GroupResponseDTO response = groupService.createGroup(dto, userLogado);
+
+        URI uri = uriBuilder.path("/groups/{id}").buildAndExpand(response.id()).toUri();
+        return ResponseEntity.created(uri).body(response);
+    }
+
+    /**
+     * Atualizar dados do Grupo (e do Paciente associado).
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<GroupResponseDTO> updateGroup(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdateGroupDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupResponseDTO response = groupService.updateGroup(id, dto, userLogado);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Entrar em um grupo existente informando o código de convite.
+     */
+    @PostMapping("/join")
+    public ResponseEntity<GroupResponseDTO> joinGroup(
+            @RequestBody @Valid JoinGroupDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupResponseDTO response = groupService.joinGroup(dto, userLogado);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Consultar informações do grupo do usuário logado.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<GroupResponseDTO> getMyGroup(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupResponseDTO response = groupService.getMyGroup(userLogado);
+        
+        if (response == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Consultar grupo por ID.
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<GroupResponseDTO> getGroupById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupResponseDTO response = groupService.getGroupById(id, userLogado);
+        return ResponseEntity.ok(response);
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/PatientController.java">
+package ajudavcapi.controller;
+
+import java.net.URI;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import ajudavcapi.domain.dto.patient.CreatePatientDTO;
+import ajudavcapi.domain.dto.patient.PatientResponseDTO;
+import ajudavcapi.domain.dto.patient.UpdatePatientDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.PatientService;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/patients")
+public class PatientController {
+
+    private final PatientService patientService;
+
+    public PatientController(PatientService patientService) {
+        this.patientService = patientService;
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('LEADER')")
+    public ResponseEntity<PatientResponseDTO> createPatient(
+            @RequestBody @Valid CreatePatientDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado,
+            UriComponentsBuilder uriBuilder) {
+
+        PatientResponseDTO response = patientService.createPatient(dto, userLogado);
+
+        URI uri = uriBuilder
+                .path("/patients/{id}")
+                .buildAndExpand(response.id())
+                .toUri();
+
+        return ResponseEntity.created(uri).body(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<PatientResponseDTO> getMyPatient(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        PatientResponseDTO response = patientService.getPatientByGroup(userLogado);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('LEADER')")
+    public ResponseEntity<PatientResponseDTO> updatePatient(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdatePatientDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        PatientResponseDTO response = patientService.updatePatient(id, dto, userLogado);
+
+        return ResponseEntity.ok(response);
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/UserController.java">
+package ajudavcapi.controller;
+
+import java.net.URI;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import ajudavcapi.domain.dto.user.UserRequestDTO;
+import ajudavcapi.domain.dto.user.UserResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.UserService;
+import jakarta.validation.Valid;
+
+@RequestMapping("/user")
+@RestController
+public class UserController {
+    
+    @Autowired
+    private UserService service;
+
+    @GetMapping
+    public ResponseEntity<List<UserResponseDTO>> getTodos() {
+        List<UserResponseDTO> lista = service.listarUsuarios().stream()
+            .map(UserResponseDTO::new)
+            .toList();
+
+        return ResponseEntity.ok(lista);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> buscarPorId(@PathVariable Long id) {
+        UserEntity user = service.buscarPorId(id);
+        return ResponseEntity.ok(new UserResponseDTO(user));
+    }
+
+    @PostMapping
+    public ResponseEntity<UserResponseDTO> cadastrar(@RequestBody @Valid UserRequestDTO dto, UriComponentsBuilder uriBuilder) {
+        UserEntity novoUsuario = service.adicionarUsuario(dto);
+        
+        URI uri = uriBuilder.path("/user/{id}").buildAndExpand(novoUsuario.getId()).toUri();
+        return ResponseEntity.created(uri).body(new UserResponseDTO(novoUsuario));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> atualizar(@PathVariable Long id, @RequestBody @Valid UserRequestDTO dto) {
+        UserEntity usuarioAtualizado = service.atualizarUsuario(id, dto);
+        return ResponseEntity.ok(new UserResponseDTO(usuarioAtualizado));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        service.deletarUsuario(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/auth/RegisterDTO.java">
+package ajudavcapi.domain.dto.auth;
+
+import ajudavcapi.domain.enums.GroupRole;
+import jakarta.validation.constraints.NotBlank;
+
+public record RegisterDTO(
+    @NotBlank String email,
+    @NotBlank String password,
+    @NotBlank GroupRole role
+) {
+    
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/group/CreateGroupDTO.java">
+package ajudavcapi.domain.dto.group;
+
+import ajudavcapi.domain.dto.patient.CreatePatientDTO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+
+public record CreateGroupDTO(
+
+    @NotBlank(message = "O nome do grupo é obrigatório.")
+    String name,
+
+    @Valid
+    CreatePatientDTO patient
+
+) {
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/user/UserRequestDTO.java">
+package ajudavcapi.domain.dto.user;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record UserRequestDTO(
+  
+    @NotBlank(message = "O nome é obrigatório")
+    String name,
+
+    @Email (message = "E-mail inválido")
+    @NotBlank(message = "O e-mail é obrigatório")
+    String email,
+
+    @NotBlank(message = "A senha é obrigatória")
+    @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
+     String password
+) {
+    
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/user/UserResponseDTO.java">
+package ajudavcapi.domain.dto.user;
+
+import java.time.LocalDateTime;
+import ajudavcapi.domain.entity.UserEntity;
+
+public record UserResponseDTO(
+    Long id,
+    String name, 
+    String email,
+    String provider, // Adicionado para expor a origem do cadastro (Útil no React Native)
+    LocalDateTime createdAt
+) {
+    
+    // Construtor canônico adaptado para mapear a Entity diretamente
+    public UserResponseDTO(UserEntity u) {
+        this(
+            u.getId(), 
+            u.getName(), 
+            u.getEmail(), 
+            u.getProvider() != null ? u.getProvider() : "LOCAL", // Fallback seguro caso o campo seja nulo no banco
+            u.getCreatedAt()
+        );
+    }
+
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/DeviceToken.java">
+package ajudavcapi.domain.entity;
+
+import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "device_tokens")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class DeviceToken {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // O token pertence a um usuário específico que receberá os alertas
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity user;
+
+    // A String do token gerada pelo serviço de push no celular (Firebase Cloud Messaging ou Expo)
+    @Column(name = "token", nullable = false, unique = true, columnDefinition = "TEXT")
+    private String token;
+
+    // Sistema operacional ou tipo do dispositivo (Ex: "android", "ios", "web")
+    @Column(name = "device_type")
+    private String deviceType;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/WeeklyProgressEntity.java">
+package ajudavcapi.domain.entity;
+
+import ajudavcapi.domain.enums.MoodState;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "weekly_progress")
+public class WeeklyProgressEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", nullable = false)
+    private GroupEntity group;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity user;
+
+    @Min(1) @Max(10)
+    @Column(name = "communication_score", nullable = false)
+    private Integer communicationScore;
+
+    @Min(1) @Max(10)
+    @Column(name = "mobility_score", nullable = false)
+    private Integer mobilityScore;
+
+    @Min(1) @Max(10)
+    @Column(name = "memory_score", nullable = false)
+    private Integer memoryScore;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mood_state", nullable = false)
+    private MoodState moodState;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    // NOVO CAMPO: Identifica a semana dentro do mês (1, 2, 3, 4 ou 5)
+    @Column(name = "week_of_month", nullable = false)
+    private Integer weekOfMonth;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    // Getters, Setters e Construtores
+    public WeeklyProgressEntity() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public GroupEntity getGroup() { return group; }
+    public void setGroup(GroupEntity group) { this.group = group; }
+
+    public UserEntity getUser() { return user; }
+    public void setUser(UserEntity user) { this.user = user; }
+
+    public Integer getCommunicationScore() { return communicationScore; }
+    public void setCommunicationScore(Integer communicationScore) { this.communicationScore = communicationScore; }
+
+    public Integer getMobilityScore() { return mobilityScore; }
+    public void setMobilityScore(Integer mobilityScore) { this.mobilityScore = mobilityScore; }
+
+    public Integer getMemoryScore() { return memoryScore; }
+    public void setMemoryScore(Integer memoryScore) { this.memoryScore = memoryScore; }
+
+    public MoodState getMoodState() { return moodState; }
+    public void setMoodState(MoodState moodState) { this.moodState = moodState; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public Integer getWeekOfMonth() { return weekOfMonth; }
+    public void setWeekOfMonth(Integer weekOfMonth) { this.weekOfMonth = weekOfMonth; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/enums/GroupRole.java">
+package ajudavcapi.domain.enums;
+
+public enum GroupRole {
+    LEADER("LEADER"), // Dono do grupo, gerencia permissões e atua como membro
+    MEMBER("MEMBER"); // Membro do grupo, participa das atividades e tarefas dentro do app
+
+    private String role;
+
+    GroupRole(String role) {
+        this.role = role;
+    }
+
+    public String getRole() {
+        return role;
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/enums/StrokeType.java">
+package ajudavcapi.domain.enums;
+
+public enum StrokeType {
+    ISQUEMICO,            // Isquêmico (entupimento de vaso)
+    HEMORRAGICO,         // Hemorrágico (rompimento de vaso)
+    ISQUEMICO_TRANSITORIO   // Isquêmico transitório (entupimento de vaso tempórario)
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/ActivityLogRepository.java">
+package ajudavcapi.domain.repository;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import ajudavcapi.domain.entity.ActivityLogEntity;
+
+@Repository
+public interface ActivityLogRepository extends JpaRepository<ActivityLogEntity, Long> {
+
+    List<ActivityLogEntity> findByGroupIdOrderByActivityDateDesc(Long groupId);
+    Optional<ActivityLogEntity> findByTitle(String title);
+    Optional<ActivityLogEntity> findByTitleIgnoreCase(String title);
+
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/CalendarEventRepository.java">
+package ajudavcapi.domain.repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import ajudavcapi.domain.entity.CalendarEventEntity;
+
+@Repository
+public interface CalendarEventRepository extends JpaRepository<CalendarEventEntity, Long> {
+
+    // Listar eventos por cateoria
+    List<CalendarEventEntity> findByEventCategory(String eventCategory);
+
+    // Lista eventos de um grupo específico ordenados pela data e hora
+    List<CalendarEventEntity> findByGroupIdOrderByEventDateTimeAsc(Long groupId);
+
+    // Lista eventos entre um intervalo de datas (para filtros semanais/mensais no app)
+    List<CalendarEventEntity> findByGroupIdAndEventDateTimeBetweenOrderByEventDateTimeAsc(
+            Long groupId, LocalDateTime start, LocalDateTime end);
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/GroupMemberRepository.java">
+package ajudavcapi.domain.repository;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import ajudavcapi.domain.entity.GroupMemberEntity;
+
+@Repository
+public interface GroupMemberRepository extends JpaRepository<GroupMemberEntity, Long> {
+
+    // Lista todos os membros de um grupo específico
+    List<GroupMemberEntity> findByGroupId(Long groupId);
+
+    // Busca o vínculo do usuário em um grupo
+    Optional<GroupMemberEntity> findByGroupIdAndUserId(Long groupId, Long userId);
+
+    // Verifica se um usuário já está cadastrado em um determinado grupo
+    boolean existsByGroupIdAndUserId(Long groupId, Long userId);
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/PatientRepository.java">
+package ajudavcapi.domain.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ajudavcapi.domain.entity.PatientEntity;
+
+@Repository
+public interface PatientRepository extends JpaRepository<PatientEntity, Long> {
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/AuthorizationService.java">
+package ajudavcapi.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import ajudavcapi.domain.repository.UserRepository;
+
+@Service
+public class AuthorizationService implements UserDetailsService {
+
+    @Autowired
+    private UserRepository repository;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // Busca pelo e-mail (que faz o papel de username) e lança exceção caso não exista
+        return repository.findByEmail(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com o e-mail: " + username));
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/PatientService.java">
+package ajudavcapi.service;
+
+import java.util.Collections;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.dto.disease.DiseaseResponseDTO;
+import ajudavcapi.domain.dto.patient.CreatePatientDTO;
+import ajudavcapi.domain.dto.patient.PatientResponseDTO;
+import ajudavcapi.domain.dto.patient.UpdatePatientDTO;
+import ajudavcapi.domain.dto.stroke.StrokeResponseDTO;
+import ajudavcapi.domain.entity.DiseaseEntity;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.PatientEntity;
+import ajudavcapi.domain.entity.StrokeEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.repository.GroupRepository;
+import ajudavcapi.domain.repository.PatientRepository;
+
+@Service
+public class PatientService {
+
+    private final PatientRepository patientRepository;
+    private final GroupRepository groupRepository;
+
+    public PatientService(
+            PatientRepository patientRepository,
+            GroupRepository groupRepository) {
+
+        this.patientRepository = patientRepository;
+        this.groupRepository = groupRepository;
+    }
+
+    @Transactional
+    public PatientResponseDTO createPatient(
+            CreatePatientDTO dto,
+            UserEntity userLogado) {
+
+        GroupEntity group = findGroupByUser(userLogado);
+
+        if (group.getPatient() != null) {
+            throw new IllegalArgumentException(
+                "Este grupo já possui um paciente cadastrado."
+            );
+        }
+
+        PatientEntity patient = new PatientEntity();
+        patient.setName(dto.name());
+        patient.setBirthDate(dto.birthDate());
+        patient.setImportantDescription(dto.importantDescription());
+        patient.setGroup(group);
+
+        if (dto.strokes() != null) {
+            for (var strokeDTO : dto.strokes()) {
+                StrokeEntity stroke = new StrokeEntity();
+                stroke.setStrokeType(strokeDTO.strokeType());
+                stroke.setStrokeDate(strokeDTO.strokeDate());
+                stroke.setPatient(patient);
+
+                patient.getStrokes().add(stroke);
+            }
+        }
+
+        if (dto.diseases() != null) {
+            for (var diseaseType : dto.diseases()) {
+                DiseaseEntity disease = new DiseaseEntity();
+                disease.setType(diseaseType);
+                disease.setPatient(patient);
+
+                patient.getDiseases().add(disease);
+            }
+        }
+
+        PatientEntity savedPatient = patientRepository.saveAndFlush(patient);
+
+        group.setPatient(savedPatient);
+        groupRepository.save(group);
+
+        return mapToResponseDTO(
+            savedPatient,
+            group.getId()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public PatientResponseDTO getPatientByGroup(
+            UserEntity userLogado) {
+
+        GroupEntity group = findGroupByUser(userLogado);
+
+        PatientEntity patient = group.getPatient();
+
+        if (patient == null) {
+            throw new IllegalArgumentException(
+                "Nenhum paciente cadastrado para este grupo."
+            );
+        }
+
+        return mapToResponseDTO(
+            patient,
+            group.getId()
+        );
+    }
+
+    @Transactional
+    public PatientResponseDTO updatePatient(
+            Long id,
+            UpdatePatientDTO dto,
+            UserEntity userLogado) {
+
+        GroupEntity group = findGroupByUser(userLogado);
+
+        PatientEntity patient = patientRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                    "Paciente não encontrado com o ID fornecido."
+                ));
+
+        if (group.getPatient() == null || !group.getPatient().getId().equals(patient.getId())) {
+            throw new IllegalArgumentException(
+                "Você não tem permissão para alterar este paciente."
+            );
+        }
+
+        patient.setName(dto.name());
+        patient.setBirthDate(dto.birthDate());
+        patient.setImportantDescription(dto.importantDescription());
+
+        if (dto.strokes() != null) {
+            patient.getStrokes().clear();
+            for (var strokeDTO : dto.strokes()) {
+                StrokeEntity stroke = new StrokeEntity();
+                stroke.setStrokeType(strokeDTO.strokeType());
+                stroke.setStrokeDate(strokeDTO.strokeDate());
+                stroke.setPatient(patient);
+
+                patient.getStrokes().add(stroke);
+            }
+        }
+
+        if (dto.diseases() != null) {
+            patient.getDiseases().clear();
+            for (var diseaseType : dto.diseases()) {
+                DiseaseEntity disease = new DiseaseEntity();
+                disease.setType(diseaseType);
+                disease.setPatient(patient);
+
+                patient.getDiseases().add(disease);
+            }
+        }
+
+        PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
+
+        return mapToResponseDTO(
+            updatedPatient,
+            group.getId()
+        );
+    }
+
+    private GroupEntity findGroupByUser(UserEntity userLogado) {
+        if (userLogado.getGroup() != null) {
+            return userLogado.getGroup();
+        }
+
+        return groupRepository.findByLeader(userLogado)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                    "Usuário não está vinculado a um grupo."
+                ));
+    }
+
+    private PatientResponseDTO mapToResponseDTO(
+            PatientEntity patient,
+            Long groupId) {
+
+        List<StrokeResponseDTO> strokes = patient.getStrokes() == null 
+                ? Collections.emptyList() 
+                : patient.getStrokes()
+                    .stream()
+                    .map(stroke -> new StrokeResponseDTO(
+                        stroke.getId(),
+                        stroke.getStrokeType(),
+                        stroke.getStrokeDate()
+                    ))
+                    .toList();
+
+        List<DiseaseResponseDTO> diseases = patient.getDiseases() == null 
+                ? Collections.emptyList() 
+                : patient.getDiseases()
+                    .stream()
+                    .map(disease -> new DiseaseResponseDTO(
+                        disease.getId(),
+                        disease.getType()
+                    ))
+                    .toList();
+
+        return new PatientResponseDTO(
+            patient.getId(),
+            patient.getName(),
+            patient.getBirthDate(),
+            patient.getImportantDescription(),
+            strokes,
+            diseases,
+            groupId
+        );
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/TokenService.java">
+package ajudavcapi.service;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+
+import ajudavcapi.domain.entity.UserEntity;
+
+@Service
+public class TokenService {
+
+    // Lê a variável de ambiente que guarda o segredo do token. Se não existir, usa um valor padrão.
+    @Value("${api.security.token.secret:bzzba23423hsjakas}")
+    private String secret;
+
+    public String generateToken(UserEntity user) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+            return JWT.create()
+                    .withIssuer("ajudavc-api")
+                    .withSubject(user.getEmail())
+                    .withExpiresAt(genExpirationDate())
+                    .sign(algorithm);
+        } catch (JWTCreationException exception) {
+            throw new RuntimeException("Erro ao gerar token JWT", exception);
+        }
+    }
+
+    public String validateToken(String token) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+            return JWT.require(algorithm)
+                    .withIssuer("ajudavc-api")
+                    .build()
+                    .verify(token)
+                    .getSubject();
+        } catch (JWTVerificationException exception) {
+            return ""; // Retorna string vazia caso o token seja inválido ou expirado
+        }
+    }
+
+    private Instant genExpirationDate() {
+        // O token expira em 2 horas usando o fuso horário de Brasília (-03:00)
+        return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/AuthenticationController.java">
+package ajudavcapi.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+
+import ajudavcapi.domain.dto.auth.AuthenticationDTO;
+import ajudavcapi.domain.dto.auth.TokenResponseDTO;
+import ajudavcapi.domain.dto.auth.GoogleLoginDTO;
+import ajudavcapi.domain.dto.user.UserRequestDTO;
+import ajudavcapi.domain.dto.user.UserResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.TokenService;
+import ajudavcapi.service.UserService;
+import jakarta.validation.Valid;
+import java.net.URI;
+import java.util.Collections;
+
+@RestController
+@RequestMapping("/auth")
+public class AuthenticationController {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private TokenService tokenService;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
+
+    @PostMapping("/login")
+    public ResponseEntity<TokenResponseDTO> login(@RequestBody @Valid AuthenticationDTO data) {
+        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
+        var auth = this.authenticationManager.authenticate(usernamePassword);
+
+        var token = tokenService.generateToken((UserEntity) auth.getPrincipal());
+        return ResponseEntity.ok(new TokenResponseDTO(token));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(
+            @RequestBody @Valid UserRequestDTO data,
+            UriComponentsBuilder uriBuilder) {
+
+        try {
+            UserEntity novoUsuario = userService.adicionarUsuario(data);
+
+            URI uri = uriBuilder
+                    .path("/user/{id}")
+                    .buildAndExpand(novoUsuario.getId())
+                    .toUri();
+
+            return ResponseEntity
+                    .created(uri)
+                    .body(new UserResponseDTO(novoUsuario));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> loginWithGoogle(@RequestBody @Valid GoogleLoginDTO data) {
+        try {
+            // 1. Valida o ID Token recebido do React Native com o Google
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(data.idToken());
+            
+            if (idToken == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido do Google.");
+            }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+
+            // 2. Busca o usuário por e-mail ou cria um novo usando os métodos reais do UserService
+            UserEntity usuario = userService.buscarPorEmail(email)
+                .orElseGet(() -> {
+                    // Passamos uma senha vazia para indicar ao UserService que é uma conta do Google
+                    UserRequestDTO novoUserDTO = new UserRequestDTO(name, email, ""); 
+                    return userService.adicionarUsuario(novoUserDTO);
+                });
+
+            // 3. Reutiliza o seu TokenService para gerar o JWT da aplicação
+            String token = tokenService.generateToken(usuario);
+
+            // 4. Retorna no mesmo formato estruturado de resposta que o seu login tradicional
+            return ResponseEntity.ok(new TokenResponseDTO(token));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro na autenticação com o Google.");
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/auth/AuthenticationDTO.java">
+package ajudavcapi.domain.dto.auth;
+
+import jakarta.validation.constraints.NotBlank;
+
+public record AuthenticationDTO(
+    @NotBlank String email,
+    @NotBlank String password
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/GroupEntity.java">
+package ajudavcapi.domain.entity;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "care_groups")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class GroupEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Column(name = "invite_code", nullable = false, unique = true, length = 6)
+    private String inviteCode;
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "patient_id", nullable = true, unique = true)
+    private PatientEntity patient;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "leader_id", nullable = false)
+    private UserEntity leader;
+
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GroupMemberEntity> members = new ArrayList<>();
+
+    // Helper method para garantir o vínculo bidirecional com PatientEntity
+    public void setPatient(PatientEntity patient) {
+        this.patient = patient;
+        if (patient != null) {
+            patient.setGroup(this);
+        }
+    }
+
+    // Helper method para garantir o vínculo bidirecional com GroupMemberEntity
+    public void addMember(GroupMemberEntity member) {
+        members.add(member);
+        member.setGroup(this);
+    }
+
+    public void setInviteCode(String inviteCode) {
+        if (inviteCode != null) {
+            this.inviteCode = inviteCode.toUpperCase().trim();
+        } else {
+            this.inviteCode = null;
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/MonthlySummaryEntity.java">
+package ajudavcapi.domain.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "monthly_summary", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"group_id", "summary_month", "summary_year"})
+})
+public class MonthlySummaryEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", nullable = false)
+    private GroupEntity group;
+
+    @Column(name = "summary_month", nullable = false)
+    private Integer month; // 1 a 12
+
+    @Column(name = "summary_year", nullable = false)
+    private Integer year; // Ex: 2026
+
+    @Column(name = "average_communication")
+    private Double averageCommunication;
+
+    @Column(name = "average_mobility")
+    private Double averageMobility;
+
+    @Column(name = "average_memory")
+    private Double averageMemory;
+
+    @Column(name = "count_animo", nullable = false)
+    private Integer countAnimo = 0;
+
+    @Column(name = "count_feliz", nullable = false)
+    private Integer countFeliz = 0;
+
+    @Column(name = "count_apatia", nullable = false)
+    private Integer countApatia = 0;
+
+    @Column(name = "count_raiva", nullable = false)
+    private Integer countRaiva = 0;
+
+    @Column(name = "count_triste", nullable = false)
+    private Integer countTriste = 0;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    public MonthlySummaryEntity() {}
+
+    // Getters e Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public GroupEntity getGroup() { return group; }
+    public void setGroup(GroupEntity group) { this.group = group; }
+
+    public Integer getMonth() { return month; }
+    public void setMonth(Integer month) { this.month = month; }
+
+    public Integer getYear() { return year; }
+    public void setYear(Integer year) { this.year = year; }
+
+    public Double getAverageCommunication() { return averageCommunication; }
+    public void setAverageCommunication(Double averageCommunication) { this.averageCommunication = averageCommunication; }
+
+    public Double getAverageMobility() { return averageMobility; }
+    public void setAverageMobility(Double averageMobility) { this.averageMobility = averageMobility; }
+
+    public Double getAverageMemory() { return averageMemory; }
+    public void setAverageMemory(Double averageMemory) { this.averageMemory = averageMemory; }
+
+    public Integer getCountAnimo() { return countAnimo; }
+    public void setCountAnimo(Integer countAnimo) { this.countAnimo = countAnimo; }
+
+    public Integer getCountFeliz() { return countFeliz; }
+    public void setCountFeliz(Integer countFeliz) { this.countFeliz = countFeliz; }
+
+    public Integer getCountApatia() { return countApatia; }
+    public void setCountApatia(Integer countApatia) { this.countApatia = countApatia; }
+
+    public Integer getCountRaiva() { return countRaiva; }
+    public void setCountRaiva(Integer countRaiva) { this.countRaiva = countRaiva; }
+
+    public Integer getCountTriste() { return countTriste; }
+    public void setCountTriste(Integer countTriste) { this.countTriste = countTriste; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/GroupRepository.java">
+package ajudavcapi.domain.repository;
+
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.UserEntity;
+
+@Repository
+public interface GroupRepository extends JpaRepository<GroupEntity, Long> {
+    List<GroupEntity> findByLeader(UserEntity leader);
+    Optional<GroupEntity> findByInviteCode(String inviteCode);
+    boolean existsByInviteCode(String inviteCode);
+    Optional<GroupEntity> findByLeaderIdOrMembersUserId(Long leaderId, Long userId);
+
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/MonthlySummaryRepository.java">
+package ajudavcapi.domain.repository;
+
+import ajudavcapi.domain.entity.MonthlySummaryEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface MonthlySummaryRepository extends JpaRepository<MonthlySummaryEntity, Long> {
+
+    @Query("SELECT m FROM MonthlySummaryEntity m WHERE m.group.id = :groupId AND m.month = :month AND m.year = :year")
+    Optional<MonthlySummaryEntity> findByGroupIdAndMonthAndYear(
+            @Param("groupId") Long groupId, 
+            @Param("month") Integer month, 
+            @Param("year") Integer year
+    );
+
+    @Query("SELECT m FROM MonthlySummaryEntity m WHERE m.group.id = :groupId ORDER BY m.year DESC, m.month DESC")
+    List<MonthlySummaryEntity> findByGroupIdOrderByYearDescMonthDesc(@Param("groupId") Long groupId);
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/WeeklyProgressRepository.java">
+package ajudavcapi.domain.repository;
+
+
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+
+public interface WeeklyProgressRepository extends JpaRepository<WeeklyProgressEntity, Long> {
+
+    // Lista o histórico do grupo ordenado do mais recente para o mais antigo
+    @Query("SELECT w FROM WeeklyProgressEntity w JOIN FETCH w.user WHERE w.group.id = :groupId ORDER BY w.createdAt DESC")
+    List<WeeklyProgressEntity> findByGroupIdOrderByCreatedAtDesc(@Param("groupId") Long groupId);
+
+    // Busca avaliações de um mês e ano específicos para calcular o resumo mensal
+    @Query("SELECT w FROM WeeklyProgressEntity w WHERE w.group.id = :groupId AND MONTH(w.createdAt) = :month AND YEAR(w.createdAt) = :year ORDER BY w.createdAt ASC")
+    List<WeeklyProgressEntity> findByGroupIdAndMonthAndYear(@Param("groupId") Long groupId, @Param("month") Integer month, @Param("year") Integer year);
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/patient/CreatePatientDTO.java">
+package ajudavcapi.domain.dto.patient;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import ajudavcapi.domain.dto.stroke.CreateStrokeDTO;
+import ajudavcapi.domain.enums.DiseaseType;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+
+public record CreatePatientDTO(
+    @NotBlank(message = "O nome do paciente é obrigatório")
+    String name,
+
+    @NotNull(message = "A data de nascimento é obrigatória")
+    @PastOrPresent(message = "A data de nascimento não pode ser uma data futura")
+    LocalDate birthDate,
+
+    String importantDescription,
+
+    @Valid
+    List<CreateStrokeDTO> strokes,
+
+    List<DiseaseType> diseases
+) {
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/PatientEntity.java">
+package ajudavcapi.domain.entity;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "patients")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class PatientEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
+
+    @Column(name = "important_description", columnDefinition = "TEXT")
+    private String importantDescription;
+
+    @OneToMany(
+        mappedBy = "patient",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private List<StrokeEntity> strokes = new ArrayList<>();
+
+    @OneToMany(
+        mappedBy = "patient",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private List<DiseaseEntity> diseases = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToOne(mappedBy = "patient")
+    private GroupEntity group;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+    }
+
+    // Métodos Utilitários para sincronização dos relacionamentos bidirecionais
+    public void addStroke(StrokeEntity stroke) {
+        if (stroke != null) {
+            strokes.add(stroke);
+            stroke.setPatient(this);
+        }
+    }
+
+    public void removeStroke(StrokeEntity stroke) {
+        if (stroke != null) {
+            strokes.remove(stroke);
+            stroke.setPatient(null);
+        }
+    }
+
+    public void addDisease(DiseaseEntity disease) {
+        if (disease != null) {
+            diseases.add(disease);
+            disease.setPatient(this);
+        }
+    }
+
+    public void removeDisease(DiseaseEntity disease) {
+        if (disease != null) {
+            diseases.remove(disease);
+            disease.setPatient(null);
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/DeviceTokenRepository.java">
+package ajudavcapi.domain.repository;
+
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ajudavcapi.domain.entity.DeviceToken;
+import ajudavcapi.domain.entity.UserEntity;
+
+@Repository
+public interface DeviceTokenRepository extends JpaRepository<DeviceToken, Long> {
+
+    // Busca todos os dispositivos registrados para um usuário específico
+    List<DeviceToken> findByUser(UserEntity user);
+
+    // Busca um token específico para verificar se ele já está cadastrado no banco
+    Optional<DeviceToken> findByToken(String token);
+
+    // Exclui um token quando o usuário faz logout no celular
+    void deleteByToken(String token);
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/GroupService.java">
+package ajudavcapi.service;
+
+import java.security.SecureRandom;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.dto.group.CreateGroupDTO;
+import ajudavcapi.domain.dto.group.GroupResponseDTO;
+import ajudavcapi.domain.dto.group.JoinGroupDTO;
+import ajudavcapi.domain.dto.group.UpdateGroupDTO;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.GroupMemberEntity;
+import ajudavcapi.domain.entity.PatientEntity;
+import ajudavcapi.domain.entity.StrokeEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.enums.GroupRole;
+import ajudavcapi.domain.repository.GroupRepository;
+
+@Service
+public class GroupService {
+
+    private final GroupRepository groupRepository;
+
+    private static final String CHARACTERS =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    private static final SecureRandom RANDOM =
+            new SecureRandom();
+
+    public GroupService(GroupRepository groupRepository) {
+        this.groupRepository = groupRepository;
+    }
+
+    @Transactional
+    public GroupResponseDTO createGroup(
+            CreateGroupDTO dto,
+            UserEntity leader) {
+
+        GroupEntity group = new GroupEntity();
+
+        group.setName(dto.name());
+        group.setLeader(leader);
+        group.setInviteCode(generateInviteCode());
+
+        if (dto.patient() != null) {
+
+            PatientEntity patient = new PatientEntity();
+
+            patient.setName(dto.patient().name().trim());
+            patient.setBirthDate(dto.patient().birthDate());
+            patient.setImportantDescription(
+                    dto.patient().importantDescription()
+            );
+
+            if (dto.patient().strokes() != null) {
+
+                for (ajudavcapi.domain.dto.stroke.CreateStrokeDTO strokeDTO
+                        : dto.patient().strokes()) {
+
+                    StrokeEntity stroke = new StrokeEntity();
+
+                    stroke.setStrokeType(
+                            strokeDTO.strokeType()
+                    );
+
+                    stroke.setStrokeDate(
+                            strokeDTO.strokeDate()
+                    );
+
+                    stroke.setPatient(patient);
+
+                    patient.getStrokes().add(stroke);
+                }
+            }
+
+            patient.setGroup(group);
+            group.setPatient(patient);
+        }
+
+        GroupMemberEntity leaderMember =
+                new GroupMemberEntity();
+
+        leaderMember.setUser(leader);
+        leaderMember.setRole(GroupRole.LEADER);
+
+        group.addMember(leaderMember);
+
+        GroupEntity savedGroup =
+                groupRepository.save(group);
+
+        return new GroupResponseDTO(savedGroup);
+    }
+
+    @Transactional
+    public GroupResponseDTO updateGroup(
+            Long id,
+            UpdateGroupDTO dto,
+            UserEntity user) {
+
+        GroupEntity group = groupRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(
+                        "Grupo não encontrado para o ID especificado."
+                ));
+
+        boolean isMemberOrLeader = group.getLeader().getId().equals(user.getId())
+                || group.getMembers().stream()
+                        .anyMatch(m -> m.getUser().getId().equals(user.getId()));
+
+        if (!isMemberOrLeader) {
+            throw new RuntimeException(
+                    "Acesso negado: você não tem permissão para alterar este grupo."
+            );
+        }
+
+        group.setName(dto.name());
+
+        if (dto.patient() != null && group.getPatient() != null) {
+            PatientEntity patient = group.getPatient();
+            patient.setName(dto.patient().name().trim());
+            patient.setBirthDate(dto.patient().birthDate());
+            patient.setImportantDescription(
+                    dto.patient().importantDescription()
+            );
+        }
+
+        GroupEntity updatedGroup = groupRepository.save(group);
+
+        return new GroupResponseDTO(updatedGroup);
+    }
+
+    @Transactional
+    public GroupResponseDTO joinGroup(
+            JoinGroupDTO dto,
+            UserEntity user) {
+
+        GroupEntity group =
+                groupRepository
+                        .findByInviteCode(dto.inviteCode())
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Código de convite inválido ou grupo não encontrado."
+                                )
+                        );
+
+        boolean alreadyMember =
+                group.getMembers()
+                        .stream()
+                        .anyMatch(m ->
+                                m.getUser()
+                                        .getId()
+                                        .equals(user.getId())
+                        );
+
+        if (alreadyMember) {
+            throw new RuntimeException(
+                    "O usuário já faz parte deste grupo."
+            );
+        }
+
+        GroupMemberEntity newMember =
+                new GroupMemberEntity();
+
+        newMember.setUser(user);
+        newMember.setRole(GroupRole.MEMBER);
+
+        group.addMember(newMember);
+
+        groupRepository.save(group);
+
+        return new GroupResponseDTO(group);
+    }
+
+    @Transactional(readOnly = true)
+    public GroupResponseDTO getMyGroup(
+            UserEntity user) {
+
+        GroupEntity group =
+                groupRepository
+                        .findByLeaderIdOrMembersUserId(
+                                user.getId(),
+                                user.getId()
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "O usuário não pertence a nenhum grupo de cuidado."
+                                )
+                        );
+
+        return new GroupResponseDTO(group);
+    }
+
+    @Transactional(readOnly = true)
+    public GroupResponseDTO getGroupById(
+            Long id,
+            UserEntity user) {
+
+        GroupEntity group =
+                groupRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Grupo não encontrado para o ID especificado."
+                                )
+                        );
+
+        boolean isMemberOrLeader =
+                group.getLeader()
+                        .getId()
+                        .equals(user.getId())
+                ||
+                group.getMembers()
+                        .stream()
+                        .anyMatch(m ->
+                                m.getUser()
+                                        .getId()
+                                        .equals(user.getId())
+                        );
+
+        if (!isMemberOrLeader) {
+            throw new RuntimeException(
+                    "Acesso negado: você não pertence a este grupo."
+            );
+        }
+
+        return new GroupResponseDTO(group);
+    }
+
+    private String generateInviteCode() {
+
+        String code;
+
+        do {
+            StringBuilder sb =
+                    new StringBuilder(6);
+
+            for (int i = 0; i < 6; i++) {
+
+                sb.append(
+                        CHARACTERS.charAt(
+                                RANDOM.nextInt(
+                                        CHARACTERS.length()
+                                )
+                        )
+                );
+            }
+
+            code = sb.toString();
+
+        } while (
+                groupRepository.existsByInviteCode(code)
+        );
+
+        return code;
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/UserService.java">
+package ajudavcapi.service;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import ajudavcapi.domain.dto.user.UserRequestDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.repository.UserRepository;
+
+@Service
+public class UserService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public List<UserEntity> listarUsuarios() {
+        return userRepository.findAll();
+    }
+
+    public UserEntity buscarPorId(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado para o ID: " + id));
+    }
+
+    public UserEntity adicionarUsuario(UserRequestDTO user) {
+        if (userRepository.existsByEmail(user.email())) {
+            throw new IllegalArgumentException("Este e-mail já está cadastrado.");
+        }
+
+        UserEntity u = new UserEntity();
+        u.setName(user.name());
+        u.setEmail(user.email());
+        
+        // Estratégia de diferenciação limpa de fluxo
+        if (user.password() == null || user.password().isBlank()) {
+            // Conta vinda do Google OAuth2
+            u.setPassword(null);
+            u.setProvider("GOOGLE");
+        } else {
+            // Conta estruturada convencional por credenciais
+            u.setPassword(passwordEncoder.encode(user.password()));
+            u.setProvider("LOCAL");
+        }
+
+        return userRepository.save(u);
+    }
+
+    public UserEntity atualizarUsuario(Long id, UserRequestDTO dto) {
+        UserEntity user = buscarPorId(id);
+
+        if (!user.getEmail().equals(dto.email()) && userRepository.existsByEmail(dto.email())) {
+            throw new IllegalArgumentException("Este e-mail já está em uso.");
+        }
+
+        user.setName(dto.name());
+        user.setEmail(dto.email());
+        
+        // Mantém a flexibilidade para atualizações de dados
+        if (dto.password() == null || dto.password().isBlank()) {
+            user.setPassword(null);
+            user.setProvider("GOOGLE");
+        } else {
+            user.setPassword(passwordEncoder.encode(dto.password()));
+            user.setProvider("LOCAL");
+        }
+
+        return userRepository.save(user);
+    }
+
+    public void deletarUsuario(Long id) {
+        UserEntity user = buscarPorId(id);
+        userRepository.delete(user);
+    }
+
+    public Optional<UserEntity> buscarPorEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    /**
+     * Método utilitário para persistir alterações diretas em entidades persistidas.
+     */
+    public UserEntity salvarUsuario(UserEntity user) {
+        return userRepository.save(user);
+    }
+}
+</file>
+
+<file path="pom.xml">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>4.1.0</version>
+		<relativePath /> <!-- lookup parent from repository -->
+	</parent>
+
+	<groupId>ajudavcapi</groupId>
+	<artifactId>ajudavc-api-backend</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>ajudavc-api-backend</name>
+	<description>Backend do Projeto AjudAVC</description>
+	<url />
+	<licenses>
+		<license />
+	</licenses>
+	<developers>
+		<developer />
+	</developers>
+	<scm>
+		<connection />
+		<developerConnection />
+		<tag />
+		<url />
+	</scm>
+
+	<properties>
+		<java.version>21</java.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-h2console</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-oauth2-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-oauth2-client-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.mysql</groupId>
+			<artifactId>mysql-connector-j</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.auth0</groupId>
+			<artifactId>java-jwt</artifactId>
+			<version>4.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.api-client</groupId>
+			<artifactId>google-api-client</artifactId>
+			<version>2.2.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.12.5</version>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.12.5</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.12.5</version>
+			<scope>runtime</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.13.0</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+</file>
+
+<file path="src/main/java/ajudavcapi/config/SecurityConfigurations.java">
+package ajudavcapi.config;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfigurations {
+    
+    @Autowired
+    private SecurityFilter securityFilter;
+
+    @Bean 
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                // Desativa CSRF (necessário para APIs REST com JWT)
+                .csrf(csrf -> csrf.disable())
+                
+                // Conecta explicitamente o Bean de configuração de CORS criado abaixo
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                
+                // Configuração de sessão STATELESS
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                
+                .authorizeHttpRequests(req -> {
+                    // Libera requisições de PREFLIGHT (OPTIONS) do navegador/CORS
+                    req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+                    
+                    // Rotas públicas de Autenticação (Login estruturado e Google OAuth2 unificados)
+                    req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/auth/register").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/auth/google").permitAll();
+                    
+                    // Exige que o JWT do SecurityFilter esteja presente para todas as outras rotas do app
+                    req.anyRequest().authenticated(); 
+                })
+                // Intercepta as chamadas privadas usando seu filtro padrão de JWT
+                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+    
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        // Aceita qualquer origem (localhost:8081, Expo Go, Render, etc.)
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        
+        // Métodos HTTP permitidos
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
+        
+        // Headers e Credenciais
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/entity/UserEntity.java">
+package ajudavcapi.domain.entity;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import ajudavcapi.domain.enums.GroupRole;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class UserEntity implements UserDetails {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank(message = "O nome é obrigatório")
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Email(message = "E-mail inválido")
+    @NotBlank(message = "O e-mail é obrigatório")
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
+
+    // A validação de tamanho mínimo deve residir no seu UserRequestDTO do cadastro tradicional.
+    @Column(name = "password", nullable = true)
+    private String password;
+
+    // Adicionado para identificar a origem da autenticação e resolver o DTO
+    @Column(name = "provider", nullable = false)
+    private String provider = "LOCAL";
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private GroupRole role = GroupRole.MEMBER;
+
+    public UserEntity(String name, String email, String password, GroupRole role) {
+        this.name = name; 
+        this.email = email;
+        this.password = password;
+        this.role = role;
+    }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    private GroupEntity group;
+
+    @OneToMany(mappedBy = "user")
+    private List<ActivityLogEntity> activities = new ArrayList<>();
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        if (this.provider == null) {
+            this.provider = "LOCAL";
+        }
+    }
+
+    // SPRING SECURITY e USER DETAILS
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (this.role == GroupRole.LEADER) {
+            return List.of(new SimpleGrantedAuthority("ROLE_LEADER"), new SimpleGrantedAuthority("ROLE_MEMBER"));
+        }
+        return List.of(new SimpleGrantedAuthority("ROLE_MEMBER"));
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
+
+    @Override
+    public String getPassword() {
+        return this.password;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/UserRepository.java">
+package ajudavcapi.domain.repository;
+
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ajudavcapi.domain.entity.UserEntity;
+
+@Repository
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
+    Optional<UserEntity> findByEmail(String email);
+    boolean existsByEmail(String email);
+    Optional<UserEntity> findByName(String name);
+    Optional<UserEntity> findByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCase(String name);
+}
+</file>
+
+<file path="src/main/resources/application.properties">
+spring.application.name=demo
+server.address=0.0.0.0
+server.port=8055
+
+# --- CONEXÃO BANCO PRODUÇÃO (MYSQL HOSTINGER) ---
+spring.datasource.url=jdbc:mysql://76.13.88.17:3306/u947092305_TCCTI27GRUPO2?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
+spring.datasource.username=u947092305_GRUPO2
+spring.datasource.password=Fundatec@01
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# Mova o database-platform daqui para não conflitar com o H2
+spring.jpa.hibernate.ddl-auto=update
+spring.sql.init.mode=never
+spring.jpa.open-in-view=false
+
+api.security.token.secret=bzzba23423hsjakas
+
+# --- CONFIGURAÇÃO DO POOL HIKARI ---
+spring.datasource.hikari.max-lifetime=60000
+spring.datasource.hikari.connection-timeout=30000
+spring.datasource.hikari.validation-timeout=30000
+
+# Ativa o Perfil de Testes
+spring.profiles.active=test
+
+# --- CONFIGURAÇÃO DO GOOGLE OAUTH2 (FRONTEND-DRIVEN) ---
+spring.security.oauth2.client.registration.google.client-id=818045939260-fim8itj3ajsogffhlmpejkbvatsrc2b0.apps.googleusercontent.com
+logging.level.org.springframework.security=DEBUG
+</file>
+
+</files>
