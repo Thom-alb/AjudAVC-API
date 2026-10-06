@@ -2,7 +2,6 @@ package ajudavcapi.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,15 +12,14 @@ import ajudavcapi.domain.entity.GroupEntity;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.domain.repository.CalendarEventRepository;
 import ajudavcapi.domain.repository.GroupRepository;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class CalendarEventService {
 
-    @Autowired
-    private CalendarEventRepository calendarEventRepository;
-
-    @Autowired
-    private GroupRepository groupRepository;
+    private final CalendarEventRepository calendarEventRepository;
+    private final GroupRepository groupRepository;
 
     @Transactional
     public CalendarEventResponseDTO createEvent(CreateCalendarEventDTO dto, UserEntity userLogado) {
@@ -58,12 +56,10 @@ public class CalendarEventService {
         CalendarEventEntity event = calendarEventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado."));
 
-        // Garante que o evento pertence ao mesmo grupo do usuário logado
         if (!event.getGroup().getId().equals(group.getId())) {
             throw new IllegalArgumentException("Acesso negado: Este evento pertence a outro grupo.");
         }
 
-        // Alterna entre concluído e pendente
         event.setCompleted(!event.isCompleted());
         CalendarEventEntity updatedEvent = calendarEventRepository.save(event);
 

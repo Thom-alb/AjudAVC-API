@@ -2,7 +2,6 @@ package ajudavcapi.config;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,12 +18,14 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfigurations {
-    
-    @Autowired
-    private SecurityFilter securityFilter;
+
+    private final SecurityFilter securityFilter;
 
     @Bean 
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -54,7 +55,7 @@ public class SecurityConfigurations {
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-    
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

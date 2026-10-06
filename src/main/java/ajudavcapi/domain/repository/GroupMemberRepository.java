@@ -4,11 +4,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import ajudavcapi.domain.entity.GroupMemberEntity;
 
-@Repository
+
 public interface GroupMemberRepository extends JpaRepository<GroupMemberEntity, Long> {
 
     // Lista todos os membros de um grupo específico

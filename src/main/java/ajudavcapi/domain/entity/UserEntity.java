@@ -1,5 +1,6 @@
 package ajudavcapi.domain.entity;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +39,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class UserEntity implements UserDetails {
+public class UserEntity implements UserDetails, Serializable {
+	
+	private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

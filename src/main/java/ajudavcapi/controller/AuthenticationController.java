@@ -1,6 +1,8 @@
 package ajudavcapi.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.net.URI;
+import java.util.Collections;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,31 +20,25 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 
 import ajudavcapi.domain.dto.auth.AuthenticationDTO;
+import ajudavcapi.domain.dto.auth.GoogleLoginDTO;
 import ajudavcapi.domain.dto.auth.TokenResponseDTO;
-import ajudavcapi.domain.dto.auth.GoogleLoginDTO; // Certifique-se de criar esta DTO
 import ajudavcapi.domain.dto.user.UserRequestDTO;
 import ajudavcapi.domain.dto.user.UserResponseDTO;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.service.TokenService;
 import ajudavcapi.service.UserService;
 import jakarta.validation.Valid;
-import java.net.URI;
-import java.util.Collections;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthenticationController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
+    private final UserService userService;
+    private final TokenService tokenService;
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private TokenService tokenService;
-
-    // Injeta o Client ID configurado no seu application.properties/yml
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;
 
@@ -67,7 +63,6 @@ public class AuthenticationController {
     @PostMapping("/google")
     public ResponseEntity<?> loginWithGoogle(@RequestBody @Valid GoogleLoginDTO data) {
         try {
-            // 1. Valida o ID Token recebido do React Native com o Google
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
                     .setAudience(Collections.singletonList(googleClientId))
                     .build();
@@ -82,18 +77,14 @@ public class AuthenticationController {
             String email = payload.getEmail();
             String name = (String) payload.get("name");
 
-            // 2. Busca o usuário por e-mail ou cria um novo usando os métodos reais do UserService
             UserEntity usuario = userService.buscarPorEmail(email)
                 .orElseGet(() -> {
-                    // Passamos uma senha vazia para indicar ao UserService que é uma conta do Google
                     UserRequestDTO novoUserDTO = new UserRequestDTO(name, email, ""); 
                     return userService.adicionarUsuario(novoUserDTO);
                 });
 
-            // 3. Reutiliza o seu TokenService para gerar o JWT da aplicação
             String token = tokenService.generateToken(usuario);
 
-            // 4. Retorna no mesmo formato estruturado de resposta que o seu login tradicional
             return ResponseEntity.ok(new TokenResponseDTO(token));
 
         } catch (Exception e) {

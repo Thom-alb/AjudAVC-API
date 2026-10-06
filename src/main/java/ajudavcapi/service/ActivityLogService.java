@@ -2,27 +2,24 @@ package ajudavcapi.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ajudavcapi.domain.dto.activitylog.ActivityLogResponseDTO;
+import ajudavcapi.domain.dto.activitylog.CreateActivityLogDTO;
 import ajudavcapi.domain.entity.ActivityLogEntity;
 import ajudavcapi.domain.entity.GroupEntity;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.domain.repository.ActivityLogRepository;
 import ajudavcapi.domain.repository.GroupRepository;
-import ajudavcapi.domain.dto.activitylog.ActivityLogResponseDTO;
-import ajudavcapi.domain.dto.activitylog.CreateActivityLogDTO;
-
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class ActivityLogService {
 
-    @Autowired
-    private ActivityLogRepository activityLogRepository;
-
-    @Autowired
-    private GroupRepository groupRepository;
+    private final ActivityLogRepository activityLogRepository;
+    private final GroupRepository groupRepository;
 
     @Transactional
     public ActivityLogResponseDTO createLog(CreateActivityLogDTO dto, UserEntity userLogado) {
@@ -36,7 +33,6 @@ public class ActivityLogService {
         log.setUser(userLogado);
         log.setGroup(group);
 
-        // Se passar status customizado usa ele, senão mantém o default "PENDING"
         if (dto.status() != null && !dto.status().isBlank()) {
             log.setStatus(dto.status().toUpperCase());
         }

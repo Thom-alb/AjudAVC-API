@@ -3,7 +3,6 @@ package ajudavcapi.controller;
 import java.net.URI;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,18 +15,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.WeeklyProgressService;
 import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
 import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.WeeklyProgressService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/weekly-progress")
+@RequiredArgsConstructor
 public class WeeklyProgressController {
 
-    @Autowired
-    private WeeklyProgressService weeklyProgressService;
+    private final WeeklyProgressService weeklyProgressService;
 
     // Registrar uma nova avaliação de progresso semanal (Líder ou Membro)
     @PostMapping

@@ -1,24 +1,25 @@
 package ajudavcapi.service;
 
-import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
-import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.entity.WeeklyProgressEntity;
-import ajudavcapi.domain.repository.WeeklyProgressRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.time.temporal.WeekFields;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
+import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+import ajudavcapi.domain.repository.WeeklyProgressRepository;
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class WeeklyProgressService {
 
-    @Autowired
-    private WeeklyProgressRepository weeklyProgressRepository;
+    private final WeeklyProgressRepository weeklyProgressRepository;
 
     @Transactional
     public WeeklyProgressResponseDTO createProgress(CreateWeeklyProgressDTO dto, UserEntity userLogado) {

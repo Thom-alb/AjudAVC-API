@@ -3,7 +3,6 @@ package ajudavcapi.controller;
 import java.net.URI;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,18 +17,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.ActivityLogService;
 import ajudavcapi.domain.dto.activitylog.ActivityLogResponseDTO;
 import ajudavcapi.domain.dto.activitylog.CreateActivityLogDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.ActivityLogService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor; 
 
 @RestController
 @RequestMapping("/activity-logs")
+@RequiredArgsConstructor 
 public class ActivityLogController {
 
-    @Autowired
-    private ActivityLogService activityLogService;
+    private final ActivityLogService activityLogService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
@@ -52,7 +52,6 @@ public class ActivityLogController {
         return ResponseEntity.ok(logs);
     }
 
-    // Altera o status (ex: /activity-logs/1/status?status=COMPLETED)
     @PatchMapping("/{id}/status")
     public ResponseEntity<ActivityLogResponseDTO> updateStatus(
             @PathVariable Long id,

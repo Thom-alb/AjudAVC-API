@@ -1,32 +1,28 @@
 package ajudavcapi.service;
 
-
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ajudavcapi.domain.dto.groupmember.GroupMemberResponseDTO;
+import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberRoleDTO;
 import ajudavcapi.domain.entity.GroupEntity;
 import ajudavcapi.domain.entity.GroupMemberEntity;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.domain.enums.GroupRole;
 import ajudavcapi.domain.repository.GroupMemberRepository;
 import ajudavcapi.domain.repository.GroupRepository;
-import ajudavcapi.domain.dto.groupmember.GroupMemberResponseDTO;
-import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberRoleDTO;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class GroupMemberService {
 
-    @Autowired
-    private GroupMemberRepository groupMemberRepository;
+    private final GroupMemberRepository groupMemberRepository;
+    private final GroupRepository groupRepository;
 
-    @Autowired
-    private GroupRepository groupRepository;
-
-    // Registra a associação do membro no grupo (usado ao criar ou entrar num grupo)
     @Transactional
     public GroupMemberEntity addMemberToGroup(GroupEntity group, UserEntity user, GroupRole role) {
         if (groupMemberRepository.existsByGroupIdAndUserId(group.getId(), user.getId())) {
@@ -42,7 +38,6 @@ public class GroupMemberService {
         return groupMemberRepository.save(member);
     }
 
-    // Listar todos os integrantes do grupo do usuário logado
     @Transactional(readOnly = true)
     public List<GroupMemberResponseDTO> getGroupMembers(UserEntity userLogado) {
         GroupEntity group = getUserGroup(userLogado);
@@ -53,7 +48,6 @@ public class GroupMemberService {
                 .toList();
     }
 
-    // Alterar o papel/role de um integrante (Apenas o Líder do grupo pode fazer)
     @Transactional
     public GroupMemberResponseDTO updateMemberRole(Long memberId, UpdateGroupMemberRoleDTO dto, UserEntity userLogado) {
         GroupEntity group = getUserGroup(userLogado);
@@ -71,7 +65,6 @@ public class GroupMemberService {
         return mapToDTO(updatedMember);
     }
 
-    // Remover um integrante do grupo (Apenas o Líder ou o próprio membro saindo)
     @Transactional
     public void removeMember(Long memberId, UserEntity userLogado) {
         GroupEntity group = getUserGroup(userLogado);
@@ -83,7 +76,6 @@ public class GroupMemberService {
             throw new IllegalArgumentException("Acesso negado: Este integrante pertence a outro grupo.");
         }
 
-        // Evita que o Líder remova a si próprio deixando o grupo sem líder
         if (member.getUser().getId().equals(group.getLeader().getId())) {
             throw new IllegalArgumentException("O líder do grupo não pode ser removido diretamente.");
         }

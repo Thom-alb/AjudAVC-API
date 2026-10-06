@@ -3,7 +3,6 @@ package ajudavcapi.controller;
 import java.net.URI;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,13 +19,14 @@ import ajudavcapi.domain.dto.user.UserResponseDTO;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.service.UserService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
-@RequestMapping("/user")
 @RestController
+@RequestMapping("/user")
+@RequiredArgsConstructor
 public class UserController {
-    
-    @Autowired
-    private UserService service;
+
+    private final UserService service;
 
     @GetMapping
     public ResponseEntity<List<UserResponseDTO>> getTodos() {
