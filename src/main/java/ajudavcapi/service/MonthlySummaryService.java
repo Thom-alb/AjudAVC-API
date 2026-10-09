@@ -9,7 +9,6 @@ import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
 import ajudavcapi.domain.entity.MonthlySummaryEntity;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.domain.entity.WeeklyProgressEntity;
-import ajudavcapi.domain.enums.MoodState;
 import ajudavcapi.domain.repository.MonthlySummaryRepository;
 import ajudavcapi.domain.repository.WeeklyProgressRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,11 +34,11 @@ public class MonthlySummaryService {
         double avgMob = progressList.stream().mapToInt(WeeklyProgressEntity::getMobilityScore).average().orElse(0.0);
         double avgMem = progressList.stream().mapToInt(WeeklyProgressEntity::getMemoryScore).average().orElse(0.0);
 
-        int cAnimo = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.ANIMO).count();
-        int cFeliz = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.FELIZ).count();
-        int cApatia = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.APATIA).count();
-        int cRaiva = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.RAIVA).count();
-        int cTriste = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.TRISTE).count();
+        int cAnimo = progressList.stream().mapToInt(p -> zeroIfNull(p.getCountAnimo())).sum();
+        int cFeliz = progressList.stream().mapToInt(p -> zeroIfNull(p.getCountFeliz())).sum();
+        int cApatia = progressList.stream().mapToInt(p -> zeroIfNull(p.getCountApatia())).sum();
+        int cRaiva = progressList.stream().mapToInt(p -> zeroIfNull(p.getCountRaiva())).sum();
+        int cTriste = progressList.stream().mapToInt(p -> zeroIfNull(p.getCountTriste())).sum();
 
         MonthlySummaryEntity summary = monthlySummaryRepository.findByGroupIdAndMonthAndYear(groupId, month, year)
                 .orElseGet(() -> {
@@ -71,6 +70,10 @@ public class MonthlySummaryService {
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
+    }
+
+    private int zeroIfNull(Integer value) {
+        return value == null ? 0 : value;
     }
 
     private MonthlySummaryResponseDTO mapToDTO(MonthlySummaryEntity entity) {

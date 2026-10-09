@@ -1,6 +1,5 @@
 package ajudavcapi.domain.dto.weeklyProgress;
 
-import ajudavcapi.domain.enums.MoodState;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -21,8 +20,11 @@ public record CreateWeeklyProgressDTO(
     @Max(value = 10, message = "A nota máxima é 10")
     Integer memoryScore,
 
-    @NotNull(message = "O estado de humor é obrigatório")
-    MoodState moodState,
+    @Min(value = 0, message = "A contagem não pode ser negativa") Integer countAnimo,
+    @Min(value = 0, message = "A contagem não pode ser negativa") Integer countFeliz,
+    @Min(value = 0, message = "A contagem não pode ser negativa") Integer countApatia,
+    @Min(value = 0, message = "A contagem não pode ser negativa") Integer countRaiva,
+    @Min(value = 0, message = "A contagem não pode ser negativa") Integer countTriste,
 
     String description
 ) {}

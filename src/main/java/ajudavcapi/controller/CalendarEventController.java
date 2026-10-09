@@ -63,9 +63,9 @@ public class CalendarEventController {
         return ResponseEntity.ok(response);
     }
 
-    // Deletar um evento (Somente o Líder)
+    // Excluir um evento da rotina do grupo
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('LEADER')")
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
     public ResponseEntity<Void> deleteEvent(
             @PathVariable Long id,
             @AuthenticationPrincipal UserEntity userLogado) {

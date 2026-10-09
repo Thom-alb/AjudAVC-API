@@ -1,17 +1,22 @@
 package ajudavcapi.domain.dto.weeklyProgress;
 
 import java.time.LocalDateTime;
-import ajudavcapi.domain.enums.MoodState;
 
 public record WeeklyProgressResponseDTO(
     Long id,
     Integer communicationScore,
     Integer mobilityScore,
     Integer memoryScore,
-    MoodState moodState,
+    Integer countAnimo,
+    Integer countFeliz,
+    Integer countApatia,
+    Integer countRaiva,
+    Integer countTriste,
     String description,
     Integer weekOfMonth,
     LocalDateTime createdAt,
     String authorName,
-    Long groupId
+    Long groupId,
+    Integer plannedActivities,
+    Integer completedActivities
 ) {}

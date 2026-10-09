@@ -31,6 +31,7 @@ public class GroupMemberController {
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<GroupMemberResponseDTO>> getGroupMembers(
             @AuthenticationPrincipal UserEntity userLogado) {
 

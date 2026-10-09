@@ -5,19 +5,20 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-
 import ajudavcapi.domain.entity.CalendarEventEntity;
-
 
 public interface CalendarEventRepository extends JpaRepository<CalendarEventEntity, Long> {
 
-    // Listar eventos por cateoria
     List<CalendarEventEntity> findByEventCategory(String eventCategory);
 
-    // Lista eventos de um grupo específico ordenados pela data e hora
     List<CalendarEventEntity> findByGroupIdOrderByEventDateTimeAsc(Long groupId);
 
-    // Lista eventos entre um intervalo de datas (para filtros semanais/mensais no app)
     List<CalendarEventEntity> findByGroupIdAndEventDateTimeBetweenOrderByEventDateTimeAsc(
+            Long groupId, LocalDateTime start, LocalDateTime end);
+
+    long countByGroupIdAndEventDateTimeGreaterThanEqualAndEventDateTimeLessThanEqual(
+            Long groupId, LocalDateTime start, LocalDateTime end);
+
+    long countByGroupIdAndEventDateTimeGreaterThanEqualAndEventDateTimeLessThanEqualAndCompletedTrue(
             Long groupId, LocalDateTime start, LocalDateTime end);
 }
