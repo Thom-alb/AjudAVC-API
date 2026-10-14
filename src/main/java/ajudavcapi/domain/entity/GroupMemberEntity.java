@@ -50,4 +50,10 @@ public class GroupMemberEntity {
 
     @Column(name = "joined_at", updatable = false)
     private LocalDateTime joinedAt = LocalDateTime.now();
+
+    @Column(name = "can_edit_routine")
+    private boolean canEditRoutine = false;
+
+    @Column(name = "can_edit_progress")
+    private boolean canEditProgress = false;
 }

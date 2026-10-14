@@ -1,8 +1,6 @@
 package ajudavcapi.domain.dto.calendarEvent;
 
-
 import java.time.LocalDateTime;
-
 
 public record CalendarEventResponseDTO(
     Long id,
@@ -12,5 +10,7 @@ public record CalendarEventResponseDTO(
     String eventCategory,
     boolean completed,
     String createdByName,
-    Long groupId
+    Long groupId,
+    Long assignedUserId,
+    String assignedUserName
 ) {}

@@ -44,6 +44,13 @@ public class ActivityLogController {
         return ResponseEntity.created(uri).body(response);
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<List<ActivityLogResponseDTO>> getMyLogs(
+            @AuthenticationPrincipal UserEntity userLogado) {
+        return ResponseEntity.ok(activityLogService.getMyLogs(userLogado));
+    }
+
     @GetMapping
     public ResponseEntity<List<ActivityLogResponseDTO>> getGroupLogs(
             @AuthenticationPrincipal UserEntity userLogado) {

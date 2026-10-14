@@ -50,6 +50,11 @@ public class CalendarEventEntity {
     @JoinColumn(name = "created_by_user_id", nullable = false)
     private UserEntity createdBy;
 
+    // Responsável atual; pode permanecer nulo para tarefas voluntárias.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_user_id", nullable = true)
+    private UserEntity assignedUser;
+
     // Vínculo direto com o Grupo de Cuidado do paciente
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)

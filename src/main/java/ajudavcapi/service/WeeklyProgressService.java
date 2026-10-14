@@ -1,52 +1,95 @@
 package ajudavcapi.service;
 
-import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
-import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.entity.WeeklyProgressEntity;
-import ajudavcapi.domain.repository.WeeklyProgressRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
+import java.time.DayOfWeek;
+import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
+import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+import ajudavcapi.domain.mapper.WeeklyProgressMapper;
+import ajudavcapi.domain.repository.CalendarEventRepository;
+import ajudavcapi.domain.repository.GroupRepository;
+import ajudavcapi.domain.repository.WeeklyProgressRepository;
+import ajudavcapi.domain.repository.GroupMemberRepository;
+import ajudavcapi.domain.entity.GroupMemberEntity;
+import ajudavcapi.domain.enums.GroupRole;
+
 @Service
 public class WeeklyProgressService {
 
+    private final WeeklyProgressRepository weeklyProgressRepository;
+    private final CalendarEventRepository calendarEventRepository;
+    private final GroupRepository groupRepository;
+    private final WeeklyProgressMapper weeklyProgressMapper;
+    private final GroupMemberRepository groupMemberRepository;
+
     @Autowired
-    private WeeklyProgressRepository weeklyProgressRepository;
+    private ActivityLogService activityLogService;
+
+    // Injeção via Construtor garantindo imunidade a NullPointer e facilidade para Mocks
+    public WeeklyProgressService(
+            WeeklyProgressRepository weeklyProgressRepository,
+            CalendarEventRepository calendarEventRepository,
+            GroupRepository groupRepository,
+            WeeklyProgressMapper weeklyProgressMapper,
+            GroupMemberRepository groupMemberRepository) {
+        this.weeklyProgressRepository = weeklyProgressRepository;
+        this.calendarEventRepository = calendarEventRepository;
+        this.groupRepository = groupRepository;
+        this.weeklyProgressMapper = weeklyProgressMapper;
+        this.groupMemberRepository = groupMemberRepository;
+    }
 
     @Transactional
     public WeeklyProgressResponseDTO createProgress(CreateWeeklyProgressDTO dto, UserEntity userLogado) {
         WeeklyProgressEntity entity = new WeeklyProgressEntity();
-        
         entity.setUser(userLogado);
-        entity.setGroup(userLogado.getGroup()); // Assume que o usuário pertence a um grupo
+
+        GroupEntity group = getUserGroup(userLogado);
+        requireProgressPermission(group, userLogado);
+        entity.setGroup(group);
+
         entity.setCommunicationScore(dto.communicationScore());
         entity.setMobilityScore(dto.mobilityScore());
         entity.setMemoryScore(dto.memoryScore());
-        entity.setMoodState(dto.moodState());
+
+        entity.setCountAnimo(dto.countAnimo() != null ? dto.countAnimo() : 0);
+        entity.setCountFeliz(dto.countFeliz() != null ? dto.countFeliz() : 0);
+        entity.setCountApatia(dto.countApatia() != null ? dto.countApatia() : 0);
+        entity.setCountRaiva(dto.countRaiva() != null ? dto.countRaiva() : 0);
+        entity.setCountTriste(dto.countTriste() != null ? dto.countTriste() : 0);
         entity.setDescription(dto.description());
 
         LocalDateTime now = LocalDateTime.now();
         entity.setCreatedAt(now);
 
-        // Calcula dinamicamente a semana do mês (ex: 1ª, 2ª, 3ª ou 4ª semana)
         int weekOfMonth = now.get(WeekFields.of(Locale.getDefault()).weekOfMonth());
         entity.setWeekOfMonth(weekOfMonth);
 
         WeeklyProgressEntity saved = weeklyProgressRepository.save(entity);
+        activityLogService.createSystemLog(
+                userLogado, group, "Progresso semanal registrado",
+                "Foi registrado um novo acompanhamento semanal do paciente.",
+                "CREATE_PROGRESS", "AUDIT");
         return mapToDTO(saved);
     }
 
     @Transactional(readOnly = true)
     public List<WeeklyProgressResponseDTO> getGroupProgressHistory(UserEntity userLogado) {
-        Long groupId = userLogado.getGroup().getId();
-        return weeklyProgressRepository.findByGroupIdOrderByCreatedAtDesc(groupId)
+        GroupEntity group = getUserGroup(userLogado);
+        
+        // Barreira Multi-Tenant Estrita: A query força a busca apenas pelo ID do grupo do usuário logado
+        return weeklyProgressRepository.findByGroupIdFetchUser(group.getId())
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
@@ -57,26 +100,54 @@ public class WeeklyProgressService {
         WeeklyProgressEntity entity = weeklyProgressRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Registro de progresso não encontrado"));
 
-        // Validação de segurança: apenas membros do mesmo grupo podem excluir
-        if (!entity.getGroup().getId().equals(userLogado.getGroup().getId())) {
+        GroupEntity group = getUserGroup(userLogado);
+        requireProgressPermission(group, userLogado);
+
+        if (!entity.getGroup().getId().equals(group.getId())) {
             throw new RuntimeException("Acesso negado: registro pertence a outro grupo");
         }
 
+        activityLogService.createSystemLog(
+                userLogado, group, "Registro de progresso excluído",
+                "Um registro de progresso semanal foi excluído.",
+                "DELETE_PROGRESS", "AUDIT");
         weeklyProgressRepository.delete(entity);
     }
 
+    private void requireProgressPermission(GroupEntity group, UserEntity user) {
+        if (group.getLeader() != null && user.getId() != null
+                && group.getLeader().getId().equals(user.getId())) {
+            return;
+        }
+        GroupMemberEntity member = groupMemberRepository.findByGroupIdAndUserId(group.getId(), user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não pertence ao grupo."));
+        if (member.getRole() == GroupRole.LEADER || member.isCanEditProgress()) {
+            return;
+        }
+        throw new IllegalArgumentException("O líder não concedeu permissão para editar o progresso.");
+    }
+
     private WeeklyProgressResponseDTO mapToDTO(WeeklyProgressEntity entity) {
-        return new WeeklyProgressResponseDTO(
-                entity.getId(),
-                entity.getCommunicationScore(),
-                entity.getMobilityScore(),
-                entity.getMemoryScore(),
-                entity.getMoodState(),
-                entity.getDescription(),
-                entity.getWeekOfMonth(),
-                entity.getCreatedAt(),
-                entity.getUser().getName(), // Ou getUsername()
-                entity.getGroup().getId()
-        );
+        Long groupId = entity.getGroup().getId();
+        LocalDateTime createdAt = entity.getCreatedAt();
+        LocalDateTime startPeriod = createdAt.toLocalDate()
+                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                .atStartOfDay();
+        LocalDateTime endPeriod = startPeriod.plusDays(7).minusNanos(1);
+
+        int planned = Math.toIntExact(
+                calendarEventRepository.countByGroupIdAndEventDateTimeBetween(groupId, startPeriod, endPeriod));
+        int completed = Math.toIntExact(
+                calendarEventRepository.countCompletedByGroupIdAndEventDateTimeBetween(groupId, startPeriod, endPeriod));
+
+        return weeklyProgressMapper.toResponseDTO(entity, planned, completed);
+    }
+
+    private GroupEntity getUserGroup(UserEntity user) {
+        if (user.getGroup() != null) {
+            return user.getGroup();
+        }
+        return groupRepository.findByLeaderIdOrMembersUserId(user.getId(), user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
     }
 }

@@ -16,6 +16,7 @@ import ajudavcapi.domain.repository.GroupMemberRepository;
 import ajudavcapi.domain.repository.GroupRepository;
 import ajudavcapi.domain.dto.groupmember.GroupMemberResponseDTO;
 import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberRoleDTO;
+import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberPermissionsDTO;
 
 @Service
 public class GroupMemberService {
@@ -25,6 +26,9 @@ public class GroupMemberService {
 
     @Autowired
     private GroupRepository groupRepository;
+
+    @Autowired
+    private ActivityLogService activityLogService;
 
     // Registra a associação do membro no grupo (usado ao criar ou entrar num grupo)
     @Transactional
@@ -57,6 +61,7 @@ public class GroupMemberService {
     @Transactional
     public GroupMemberResponseDTO updateMemberRole(Long memberId, UpdateGroupMemberRoleDTO dto, UserEntity userLogado) {
         GroupEntity group = getUserGroup(userLogado);
+        ensureLeader(group, userLogado);
 
         GroupMemberEntity member = groupMemberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("Membro do grupo não encontrado."));
@@ -67,14 +72,56 @@ public class GroupMemberService {
 
         member.setRole(dto.role());
         GroupMemberEntity updatedMember = groupMemberRepository.save(member);
+        activityLogService.createSystemLog(
+                userLogado, group, "Função atualizada: " + member.getUser().getName(),
+                "A função do integrante foi alterada para " + dto.role() + ".",
+                "ROLE_UPDATE", "AUDIT");
 
         return mapToDTO(updatedMember);
+    }
+
+    @Transactional
+    public GroupMemberResponseDTO updateMemberPermissions(
+            Long memberId,
+            UpdateGroupMemberPermissionsDTO dto,
+            UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+        ensureLeader(group, userLogado);
+
+        GroupMemberEntity member = groupMemberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("Membro do grupo não encontrado."));
+
+        if (!member.getGroup().getId().equals(group.getId())) {
+            throw new IllegalArgumentException("Acesso negado: Este integrante pertence a outro grupo.");
+        }
+        if (member.getRole() == GroupRole.LEADER) {
+            throw new IllegalArgumentException("As permissões do líder não podem ser alteradas por este endpoint.");
+        }
+
+        member.setCanEditRoutine(Boolean.TRUE.equals(dto.canEditRoutine()));
+        member.setCanEditProgress(Boolean.TRUE.equals(dto.canEditProgress()));
+        GroupMemberEntity updated = groupMemberRepository.save(member);
+        activityLogService.createSystemLog(
+                userLogado, group, "Permissões atualizadas: " + member.getUser().getName(),
+                "Permissões de rotina=" + member.isCanEditRoutine()
+                        + ", progresso=" + member.isCanEditProgress()
+                        + " para " + member.getUser().getName() + ".",
+                "PERMISSIONS", "AUDIT");
+        return mapToDTO(updated);
+    }
+
+    private void ensureLeader(GroupEntity group, UserEntity user) {
+        if (group.getLeader() == null || user == null || user.getId() == null
+                || !group.getLeader().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Apenas o líder do grupo pode alterar permissões.");
+        }
     }
 
     // Remover um integrante do grupo (Apenas o Líder ou o próprio membro saindo)
     @Transactional
     public void removeMember(Long memberId, UserEntity userLogado) {
         GroupEntity group = getUserGroup(userLogado);
+        ensureLeader(group, userLogado);
 
         GroupMemberEntity member = groupMemberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("Membro do grupo não encontrado."));
@@ -88,6 +135,10 @@ public class GroupMemberService {
             throw new IllegalArgumentException("O líder do grupo não pode ser removido diretamente.");
         }
 
+        activityLogService.createSystemLog(
+                userLogado, group, "Integrante removido: " + member.getUser().getName(),
+                "O integrante foi removido do grupo de cuidado.",
+                "MEMBER_REMOVAL", "AUDIT");
         groupMemberRepository.delete(member);
     }
 
@@ -95,9 +146,7 @@ public class GroupMemberService {
         if (user.getGroup() != null) {
             return user.getGroup();
         }
-        return groupRepository.findByLeader(user)
-                .stream()
-                .findFirst()
+        return groupRepository.findByLeaderIdOrMembersUserId(user.getId(), user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
     }
 
@@ -108,7 +157,9 @@ public class GroupMemberService {
             entity.getUser().getName(),
             entity.getUser().getEmail(),
             entity.getRole(),
-            entity.getJoinedAt()
+            entity.getJoinedAt(),
+            entity.isCanEditRoutine(),
+            entity.isCanEditProgress()
         );
     }
 }

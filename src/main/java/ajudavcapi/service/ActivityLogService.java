@@ -46,6 +46,36 @@ public class ActivityLogService {
         return mapToDTO(savedLog);
     }
 
+    @Transactional
+    public void createSystemLog(
+            UserEntity user,
+            GroupEntity group,
+            String title,
+            String description,
+            String action,
+            String category) {
+        ActivityLogEntity log = new ActivityLogEntity();
+        log.setTitle(title);
+        log.setDescription(description);
+        log.setActivityDate(java.time.LocalDateTime.now());
+        log.setStatus(action == null || action.isBlank() ? "RECORDED" : action.toUpperCase());
+        log.setCategory(category == null || category.isBlank() ? "AUDIT" : category.toUpperCase());
+        log.setUser(user);
+        log.setGroup(group);
+        log.setCreatedAt(java.time.LocalDateTime.now());
+        activityLogRepository.save(log);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActivityLogResponseDTO> getMyLogs(UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+        return activityLogRepository.findByGroupIdAndUserIdOrderByCreatedAtDesc(
+                        group.getId(), userLogado.getId())
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<ActivityLogResponseDTO> getGroupLogs(UserEntity userLogado) {
         GroupEntity group = getUserGroup(userLogado);
@@ -66,6 +96,9 @@ public class ActivityLogService {
         if (!log.getGroup().getId().equals(group.getId())) {
             throw new IllegalArgumentException("Acesso negado: Esta atividade pertence a outro grupo.");
         }
+        if ("AUDIT".equalsIgnoreCase(log.getCategory())) {
+            throw new IllegalArgumentException("Registros de auditoria não podem ser alterados.");
+        }
 
         log.setStatus(newStatus.toUpperCase());
         ActivityLogEntity updatedLog = activityLogRepository.save(log);
@@ -83,6 +116,9 @@ public class ActivityLogService {
         if (!log.getGroup().getId().equals(group.getId())) {
             throw new IllegalArgumentException("Acesso negado: Esta atividade pertence a outro grupo.");
         }
+        if ("AUDIT".equalsIgnoreCase(log.getCategory())) {
+            throw new IllegalArgumentException("Registros de auditoria não podem ser excluídos.");
+        }
 
         activityLogRepository.delete(log);
     }
@@ -91,9 +127,7 @@ public class ActivityLogService {
         if (user.getGroup() != null) {
             return user.getGroup();
         }
-        return groupRepository.findByLeader(user)
-                .stream()
-                .findFirst()
+        return groupRepository.findByLeaderIdOrMembersUserId(user.getId(), user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
     }
 

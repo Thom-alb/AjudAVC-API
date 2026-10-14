@@ -1,17 +1,19 @@
 package ajudavcapi.service;
 
-import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
-import ajudavcapi.domain.entity.MonthlySummaryEntity;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.entity.WeeklyProgressEntity;
-import ajudavcapi.domain.enums.MoodState;
-import ajudavcapi.domain.repository.MonthlySummaryRepository;
-import ajudavcapi.domain.repository.WeeklyProgressRepository;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
+import ajudavcapi.domain.entity.MonthlySummaryEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+import ajudavcapi.domain.repository.MonthlySummaryRepository;
+import ajudavcapi.domain.repository.WeeklyProgressRepository;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.repository.GroupRepository;
 
 @Service
 public class MonthlySummaryService {
@@ -22,35 +24,38 @@ public class MonthlySummaryService {
     @Autowired
     private WeeklyProgressRepository weeklyProgressRepository;
 
+    @Autowired
+    private GroupRepository groupRepository;
+
     @Transactional
     public MonthlySummaryResponseDTO getOrCalculateSummary(Integer month, Integer year, UserEntity userLogado) {
-        Long groupId = userLogado.getGroup().getId();
+        GroupEntity group = getUserGroup(userLogado);
+        Long groupId = group.getId();
 
-        // 1. Busca todas as avaliações registradas naquele mês para o grupo
-        List<WeeklyProgressEntity> progressList = weeklyProgressRepository.findByGroupIdAndMonthAndYear(groupId, month, year);
+        List<WeeklyProgressEntity> progressList = weeklyProgressRepository.findByGroupIdAndMonthAndYear(groupId, month,
+                year);
 
-        // 2. Se não houver registros no mês, retorna valores zerados
         if (progressList.isEmpty()) {
             return new MonthlySummaryResponseDTO(null, month, year, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, null, groupId);
         }
 
-        // 3. Calcula as médias dos sliders
-        double avgComm = progressList.stream().mapToInt(WeeklyProgressEntity::getCommunicationScore).average().orElse(0.0);
-        double avgMob = progressList.stream().mapToInt(WeeklyProgressEntity::getMobilityScore).average().orElse(0.0);
-        double avgMem = progressList.stream().mapToInt(WeeklyProgressEntity::getMemoryScore).average().orElse(0.0);
+        double avgComm = progressList.stream()
+                .mapToInt(p -> p.getCommunicationScore() != null ? p.getCommunicationScore() : 0).average().orElse(0.0);
+        double avgMob = progressList.stream().mapToInt(p -> p.getMobilityScore() != null ? p.getMobilityScore() : 0)
+                .average().orElse(0.0);
+        double avgMem = progressList.stream().mapToInt(p -> p.getMemoryScore() != null ? p.getMemoryScore() : 0)
+                .average().orElse(0.0);
 
-        // 4. Conta as ocorrências de cada humor no mês
-        int cAnimo = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.ANIMO).count();
-        int cFeliz = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.FELIZ).count();
-        int cApatia = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.APATIA).count();
-        int cRaiva = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.RAIVA).count();
-        int cTriste = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.TRISTE).count();
+        int cAnimo = progressList.stream().mapToInt(p -> p.getCountAnimo() == null ? 0 : p.getCountAnimo()).sum();
+        int cFeliz = progressList.stream().mapToInt(p -> p.getCountFeliz() == null ? 0 : p.getCountFeliz()).sum();
+        int cApatia = progressList.stream().mapToInt(p -> p.getCountApatia() == null ? 0 : p.getCountApatia()).sum();
+        int cRaiva = progressList.stream().mapToInt(p -> p.getCountRaiva() == null ? 0 : p.getCountRaiva()).sum();
+        int cTriste = progressList.stream().mapToInt(p -> p.getCountTriste() == null ? 0 : p.getCountTriste()).sum();
 
-        // 5. Atualiza ou cria o registro no banco para cache/histórico
         MonthlySummaryEntity summary = monthlySummaryRepository.findByGroupIdAndMonthAndYear(groupId, month, year)
                 .orElseGet(() -> {
                     MonthlySummaryEntity newEntity = new MonthlySummaryEntity();
-                    newEntity.setGroup(userLogado.getGroup());
+                    newEntity.setGroup(group);
                     newEntity.setMonth(month);
                     newEntity.setYear(year);
                     return newEntity;
@@ -72,11 +77,22 @@ public class MonthlySummaryService {
 
     @Transactional(readOnly = true)
     public List<MonthlySummaryResponseDTO> getGroupSummaries(UserEntity userLogado) {
-        Long groupId = userLogado.getGroup().getId();
+        Long groupId = getUserGroup(userLogado).getId();
         return monthlySummaryRepository.findByGroupIdOrderByYearDescMonthDesc(groupId)
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
+    }
+
+    private GroupEntity getUserGroup(UserEntity user) {
+        if (user == null) {
+            throw new IllegalArgumentException("Usuário autenticado não encontrado.");
+        }
+        if (user.getGroup() != null) {
+            return user.getGroup();
+        }
+        return groupRepository.findByLeaderIdOrMembersUserId(user.getId(), user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
     }
 
     private MonthlySummaryResponseDTO mapToDTO(MonthlySummaryEntity entity) {
@@ -93,7 +109,6 @@ public class MonthlySummaryService {
                 entity.getCountRaiva(),
                 entity.getCountTriste(),
                 entity.getCreatedAt(),
-                entity.getGroup().getId()
-        );
+                entity.getGroup().getId());
     }
 }

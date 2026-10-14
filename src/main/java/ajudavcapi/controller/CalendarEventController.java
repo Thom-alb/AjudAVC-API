@@ -63,9 +63,16 @@ public class CalendarEventController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{id}/assign")
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<CalendarEventResponseDTO> assignEvent(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+        return ResponseEntity.ok(calendarEventService.assignEvent(id, userLogado));
+    }
+
     // Deletar um evento (Somente o Líder)
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('LEADER')")
     public ResponseEntity<Void> deleteEvent(
             @PathVariable Long id,
             @AuthenticationPrincipal UserEntity userLogado) {

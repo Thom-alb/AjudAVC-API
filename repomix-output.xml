@@ -118,6 +118,8 @@ src/
             GroupRole.java
             MoodState.java
             StrokeType.java
+          mapper/
+            WeeklyProgressMapper.java
           repository/
             ActivityLogRepository.java
             CalendarEventRepository.java
@@ -162,6 +164,43 @@ pom.xml
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="src/main/java/ajudavcapi/domain/mapper/WeeklyProgressMapper.java">
+package ajudavcapi.domain.mapper;
+
+import org.springframework.stereotype.Component;
+import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+
+@Component
+public class WeeklyProgressMapper {
+
+    public WeeklyProgressResponseDTO toResponseDTO(WeeklyProgressEntity entity, Integer planned, Integer completed) {
+        if (entity == null) {
+            return null;
+        }
+        
+        return new WeeklyProgressResponseDTO(
+                entity.getId(),
+                entity.getCommunicationScore(),
+                entity.getMobilityScore(),
+                entity.getMemoryScore(),
+                entity.getCountAnimo(),
+                entity.getCountFeliz() != null ? entity.getCountFeliz() : 0,
+                entity.getCountApatia(),
+                entity.getCountRaiva(),
+                entity.getCountTriste(),
+                entity.getDescription(),
+                entity.getWeekOfMonth(),
+                entity.getCreatedAt(),
+                entity.getUser() != null ? entity.getUser().getName() : "Cuidador",
+                entity.getGroup() != null ? entity.getGroup().getId() : null,
+                planned,
+                completed
+        );
+    }
+}
+</file>
 
 <file path="src/main/java/ajudavcapi/controller/CalendarEventController.java">
 package ajudavcapi.controller;
@@ -597,7 +636,6 @@ public record StrokeResponseDTO(
 <file path="src/main/java/ajudavcapi/domain/dto/weeklyProgress/CreateWeeklyProgressDTO.java">
 package ajudavcapi.domain.dto.weeklyProgress;
 
-import ajudavcapi.domain.enums.MoodState;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -618,8 +656,11 @@ public record CreateWeeklyProgressDTO(
     @Max(value = 10, message = "A nota máxima é 10")
     Integer memoryScore,
 
-    @NotNull(message = "O estado de humor é obrigatório")
-    MoodState moodState,
+    Integer countAnimo,
+    Integer countFeliz,
+    Integer countApatia,
+    Integer countRaiva,
+    Integer countTriste,
 
     String description
 ) {}
@@ -1348,19 +1389,24 @@ public record CreateStrokeDTO(
 package ajudavcapi.domain.dto.weeklyProgress;
 
 import java.time.LocalDateTime;
-import ajudavcapi.domain.enums.MoodState;
 
 public record WeeklyProgressResponseDTO(
     Long id,
     Integer communicationScore,
     Integer mobilityScore,
     Integer memoryScore,
-    MoodState moodState,
+    Integer countAnimo,
+    Integer countFeliz,
+    Integer countApatia,
+    Integer countRaiva,
+    Integer countTriste,
     String description,
     Integer weekOfMonth,
     LocalDateTime createdAt,
     String authorName,
-    Long groupId
+    Long groupId,
+    Integer plannedActivities,
+    Integer completedActivities
 ) {}
 </file>
 
@@ -1770,18 +1816,18 @@ public class ActivityLogService {
 <file path="src/main/java/ajudavcapi/service/MonthlySummaryService.java">
 package ajudavcapi.service;
 
-import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
-import ajudavcapi.domain.entity.MonthlySummaryEntity;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.entity.WeeklyProgressEntity;
-import ajudavcapi.domain.enums.MoodState;
-import ajudavcapi.domain.repository.MonthlySummaryRepository;
-import ajudavcapi.domain.repository.WeeklyProgressRepository;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
+import ajudavcapi.domain.entity.MonthlySummaryEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+import ajudavcapi.domain.repository.MonthlySummaryRepository;
+import ajudavcapi.domain.repository.WeeklyProgressRepository;
 
 @Service
 public class MonthlySummaryService {
@@ -1796,27 +1842,26 @@ public class MonthlySummaryService {
     public MonthlySummaryResponseDTO getOrCalculateSummary(Integer month, Integer year, UserEntity userLogado) {
         Long groupId = userLogado.getGroup().getId();
 
-        // 1. Busca todas as avaliações registradas naquele mês para o grupo
-        List<WeeklyProgressEntity> progressList = weeklyProgressRepository.findByGroupIdAndMonthAndYear(groupId, month, year);
+        List<WeeklyProgressEntity> progressList = weeklyProgressRepository.findByGroupIdAndMonthAndYear(groupId, month,
+                year);
 
-        // 2. Se não houver registros no mês, retorna valores zerados
         if (progressList.isEmpty()) {
             return new MonthlySummaryResponseDTO(null, month, year, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, null, groupId);
         }
 
-        // 3. Calcula as médias dos sliders
-        double avgComm = progressList.stream().mapToInt(WeeklyProgressEntity::getCommunicationScore).average().orElse(0.0);
-        double avgMob = progressList.stream().mapToInt(WeeklyProgressEntity::getMobilityScore).average().orElse(0.0);
-        double avgMem = progressList.stream().mapToInt(WeeklyProgressEntity::getMemoryScore).average().orElse(0.0);
+        double avgComm = progressList.stream()
+                .mapToInt(p -> p.getCommunicationScore() != null ? p.getCommunicationScore() : 0).average().orElse(0.0);
+        double avgMob = progressList.stream().mapToInt(p -> p.getMobilityScore() != null ? p.getMobilityScore() : 0)
+                .average().orElse(0.0);
+        double avgMem = progressList.stream().mapToInt(p -> p.getMemoryScore() != null ? p.getMemoryScore() : 0)
+                .average().orElse(0.0);
 
-        // 4. Conta as ocorrências de cada humor no mês
-        int cAnimo = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.ANIMO).count();
-        int cFeliz = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.FELIZ).count();
-        int cApatia = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.APATIA).count();
-        int cRaiva = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.RAIVA).count();
-        int cTriste = (int) progressList.stream().filter(p -> p.getMoodState() == MoodState.TRISTE).count();
+        int cAnimo = progressList.stream().mapToInt(p -> p.getCountAnimo() != null ? p.getCountAnimo() : 0).sum();
+        int cFeliz = progressList.stream().mapToInt(p -> p.getCountFeliz() != null ? p.getCountFeliz() : 0).sum();
+        int cApatia = progressList.stream().mapToInt(p -> p.getCountApatia() != null ? p.getCountApatia() : 0).sum();
+        int cRaiva = progressList.stream().mapToInt(p -> p.getCountRaiva() != null ? p.getCountRaiva() : 0).sum();
+        int cTriste = progressList.stream().mapToInt(p -> p.getCountTriste() != null ? p.getCountTriste() : 0).sum();
 
-        // 5. Atualiza ou cria o registro no banco para cache/histórico
         MonthlySummaryEntity summary = monthlySummaryRepository.findByGroupIdAndMonthAndYear(groupId, month, year)
                 .orElseGet(() -> {
                     MonthlySummaryEntity newEntity = new MonthlySummaryEntity();
@@ -1863,8 +1908,7 @@ public class MonthlySummaryService {
                 entity.getCountRaiva(),
                 entity.getCountTriste(),
                 entity.getCreatedAt(),
-                entity.getGroup().getId()
-        );
+                entity.getGroup().getId());
     }
 }
 </file>
@@ -1872,42 +1916,66 @@ public class MonthlySummaryService {
 <file path="src/main/java/ajudavcapi/service/WeeklyProgressService.java">
 package ajudavcapi.service;
 
-import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
-import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.entity.WeeklyProgressEntity;
-import ajudavcapi.domain.repository.WeeklyProgressRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.time.temporal.WeekFields;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
+import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.WeeklyProgressEntity;
+import ajudavcapi.domain.mapper.WeeklyProgressMapper;
+import ajudavcapi.domain.repository.CalendarEventRepository;
+import ajudavcapi.domain.repository.GroupRepository;
+import ajudavcapi.domain.repository.WeeklyProgressRepository;
+
 @Service
 public class WeeklyProgressService {
 
-    @Autowired
-    private WeeklyProgressRepository weeklyProgressRepository;
+    private final WeeklyProgressRepository weeklyProgressRepository;
+    private final CalendarEventRepository calendarEventRepository;
+    private final GroupRepository groupRepository;
+    private final WeeklyProgressMapper weeklyProgressMapper;
+
+    // Injeção via Construtor garantindo imunidade a NullPointer e facilidade para Mocks
+    public WeeklyProgressService(
+            WeeklyProgressRepository weeklyProgressRepository,
+            CalendarEventRepository calendarEventRepository,
+            GroupRepository groupRepository,
+            WeeklyProgressMapper weeklyProgressMapper) {
+        this.weeklyProgressRepository = weeklyProgressRepository;
+        this.calendarEventRepository = calendarEventRepository;
+        this.groupRepository = groupRepository;
+        this.weeklyProgressMapper = weeklyProgressMapper;
+    }
 
     @Transactional
     public WeeklyProgressResponseDTO createProgress(CreateWeeklyProgressDTO dto, UserEntity userLogado) {
         WeeklyProgressEntity entity = new WeeklyProgressEntity();
-        
         entity.setUser(userLogado);
-        entity.setGroup(userLogado.getGroup()); // Assume que o usuário pertence a um grupo
+
+        GroupEntity group = getUserGroup(userLogado);
+        entity.setGroup(group);
+
         entity.setCommunicationScore(dto.communicationScore());
         entity.setMobilityScore(dto.mobilityScore());
         entity.setMemoryScore(dto.memoryScore());
-        entity.setMoodState(dto.moodState());
+
+        entity.setCountAnimo(dto.countAnimo() != null ? dto.countAnimo() : 0);
+        entity.setCountFeliz(dto.countFeliz() != null ? dto.countFeliz() : 0);
+        entity.setCountApatia(dto.countApatia() != null ? dto.countApatia() : 0);
+        entity.setCountRaiva(dto.countRaiva() != null ? dto.countRaiva() : 0);
+        entity.setCountTriste(dto.countTriste() != null ? dto.countTriste() : 0);
         entity.setDescription(dto.description());
 
         LocalDateTime now = LocalDateTime.now();
         entity.setCreatedAt(now);
 
-        // Calcula dinamicamente a semana do mês (ex: 1ª, 2ª, 3ª ou 4ª semana)
         int weekOfMonth = now.get(WeekFields.of(Locale.getDefault()).weekOfMonth());
         entity.setWeekOfMonth(weekOfMonth);
 
@@ -1917,8 +1985,10 @@ public class WeeklyProgressService {
 
     @Transactional(readOnly = true)
     public List<WeeklyProgressResponseDTO> getGroupProgressHistory(UserEntity userLogado) {
-        Long groupId = userLogado.getGroup().getId();
-        return weeklyProgressRepository.findByGroupIdOrderByCreatedAtDesc(groupId)
+        GroupEntity group = getUserGroup(userLogado);
+        
+        // Barreira Multi-Tenant Estrita: A query força a busca apenas pelo ID do grupo do usuário logado
+        return weeklyProgressRepository.findByGroupIdFetchUser(group.getId())
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
@@ -1929,8 +1999,9 @@ public class WeeklyProgressService {
         WeeklyProgressEntity entity = weeklyProgressRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Registro de progresso não encontrado"));
 
-        // Validação de segurança: apenas membros do mesmo grupo podem excluir
-        if (!entity.getGroup().getId().equals(userLogado.getGroup().getId())) {
+        GroupEntity group = getUserGroup(userLogado);
+
+        if (!entity.getGroup().getId().equals(group.getId())) {
             throw new RuntimeException("Acesso negado: registro pertence a outro grupo");
         }
 
@@ -1938,18 +2009,24 @@ public class WeeklyProgressService {
     }
 
     private WeeklyProgressResponseDTO mapToDTO(WeeklyProgressEntity entity) {
-        return new WeeklyProgressResponseDTO(
-                entity.getId(),
-                entity.getCommunicationScore(),
-                entity.getMobilityScore(),
-                entity.getMemoryScore(),
-                entity.getMoodState(),
-                entity.getDescription(),
-                entity.getWeekOfMonth(),
-                entity.getCreatedAt(),
-                entity.getUser().getName(), // Ou getUsername()
-                entity.getGroup().getId()
-        );
+        Long groupId = entity.getGroup().getId();
+        LocalDateTime endPeriod = entity.getCreatedAt();
+        LocalDateTime startPeriod = endPeriod.minusDays(7);
+
+        int planned = (int) calendarEventRepository.countByGroupIdAndEventDateTimeBetween(groupId, startPeriod, endPeriod);
+        int completed = (int) calendarEventRepository.countCompletedByGroupIdAndEventDateTimeBetween(groupId, startPeriod, endPeriod);
+
+        return weeklyProgressMapper.toResponseDTO(entity, planned, completed);
+    }
+
+    private GroupEntity getUserGroup(UserEntity user) {
+        if (user.getGroup() != null) {
+            return user.getGroup();
+        }
+        return groupRepository.findByLeader(user)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
     }
 }
 </file>
@@ -2960,14 +3037,21 @@ public class DeviceToken {
 <file path="src/main/java/ajudavcapi/domain/entity/WeeklyProgressEntity.java">
 package ajudavcapi.domain.entity;
 
-import ajudavcapi.domain.enums.MoodState;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "weekly_progress")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class WeeklyProgressEntity {
 
     @Id
@@ -2994,52 +3078,29 @@ public class WeeklyProgressEntity {
     @Column(name = "memory_score", nullable = false)
     private Integer memoryScore;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "mood_state", nullable = false)
-    private MoodState moodState;
+    @Column(name = "count_animo", nullable = false)
+    private Integer countAnimo = 0;
+
+    @Column(name = "count_feliz", nullable = false)
+    private Integer countFeliz = 0;
+
+    @Column(name = "count_apatia", nullable = false)
+    private Integer countApatia = 0;
+
+    @Column(name = "count_raiva", nullable = false)
+    private Integer countRaiva = 0;
+
+    @Column(name = "count_triste", nullable = false)
+    private Integer countTriste = 0;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    // NOVO CAMPO: Identifica a semana dentro do mês (1, 2, 3, 4 ou 5)
     @Column(name = "week_of_month", nullable = false)
     private Integer weekOfMonth;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-
-    // Getters, Setters e Construtores
-    public WeeklyProgressEntity() {}
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public GroupEntity getGroup() { return group; }
-    public void setGroup(GroupEntity group) { this.group = group; }
-
-    public UserEntity getUser() { return user; }
-    public void setUser(UserEntity user) { this.user = user; }
-
-    public Integer getCommunicationScore() { return communicationScore; }
-    public void setCommunicationScore(Integer communicationScore) { this.communicationScore = communicationScore; }
-
-    public Integer getMobilityScore() { return mobilityScore; }
-    public void setMobilityScore(Integer mobilityScore) { this.mobilityScore = mobilityScore; }
-
-    public Integer getMemoryScore() { return memoryScore; }
-    public void setMemoryScore(Integer memoryScore) { this.memoryScore = memoryScore; }
-
-    public MoodState getMoodState() { return moodState; }
-    public void setMoodState(MoodState moodState) { this.moodState = moodState; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public Integer getWeekOfMonth() { return weekOfMonth; }
-    public void setWeekOfMonth(Integer weekOfMonth) { this.weekOfMonth = weekOfMonth; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
 </file>
 
@@ -3098,24 +3159,25 @@ package ajudavcapi.domain.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ajudavcapi.domain.entity.CalendarEventEntity;
 
-@Repository
 public interface CalendarEventRepository extends JpaRepository<CalendarEventEntity, Long> {
 
-    // Listar eventos por cateoria
     List<CalendarEventEntity> findByEventCategory(String eventCategory);
 
-    // Lista eventos de um grupo específico ordenados pela data e hora
     List<CalendarEventEntity> findByGroupIdOrderByEventDateTimeAsc(Long groupId);
 
-    // Lista eventos entre um intervalo de datas (para filtros semanais/mensais no app)
     List<CalendarEventEntity> findByGroupIdAndEventDateTimeBetweenOrderByEventDateTimeAsc(
             Long groupId, LocalDateTime start, LocalDateTime end);
+
+    @Query("SELECT COUNT(c) FROM CalendarEventEntity c WHERE c.group.id = :groupId AND c.eventDateTime BETWEEN :start AND :end")
+    long countByGroupIdAndEventDateTimeBetween(@Param("groupId") Long groupId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT COUNT(c) FROM CalendarEventEntity c WHERE c.group.id = :groupId AND c.completed = true AND c.eventDateTime BETWEEN :start AND :end")
+    long countCompletedByGroupIdAndEventDateTimeBetween(@Param("groupId") Long groupId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }
 </file>
 
@@ -3451,126 +3513,6 @@ public class TokenService {
 }
 </file>
 
-<file path="src/main/java/ajudavcapi/controller/AuthenticationController.java">
-package ajudavcapi.controller;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
-
-import ajudavcapi.domain.dto.auth.AuthenticationDTO;
-import ajudavcapi.domain.dto.auth.TokenResponseDTO;
-import ajudavcapi.domain.dto.auth.GoogleLoginDTO;
-import ajudavcapi.domain.dto.user.UserRequestDTO;
-import ajudavcapi.domain.dto.user.UserResponseDTO;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.TokenService;
-import ajudavcapi.service.UserService;
-import jakarta.validation.Valid;
-import java.net.URI;
-import java.util.Collections;
-
-@RestController
-@RequestMapping("/auth")
-public class AuthenticationController {
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private TokenService tokenService;
-
-    @Value("${spring.security.oauth2.client.registration.google.client-id}")
-    private String googleClientId;
-
-    @PostMapping("/login")
-    public ResponseEntity<TokenResponseDTO> login(@RequestBody @Valid AuthenticationDTO data) {
-        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
-        var auth = this.authenticationManager.authenticate(usernamePassword);
-
-        var token = tokenService.generateToken((UserEntity) auth.getPrincipal());
-        return ResponseEntity.ok(new TokenResponseDTO(token));
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<?> register(
-            @RequestBody @Valid UserRequestDTO data,
-            UriComponentsBuilder uriBuilder) {
-
-        try {
-            UserEntity novoUsuario = userService.adicionarUsuario(data);
-
-            URI uri = uriBuilder
-                    .path("/user/{id}")
-                    .buildAndExpand(novoUsuario.getId())
-                    .toUri();
-
-            return ResponseEntity
-                    .created(uri)
-                    .body(new UserResponseDTO(novoUsuario));
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(e.getMessage());
-        }
-    }
-
-    @PostMapping("/google")
-    public ResponseEntity<?> loginWithGoogle(@RequestBody @Valid GoogleLoginDTO data) {
-        try {
-            // 1. Valida o ID Token recebido do React Native com o Google
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                    .setAudience(Collections.singletonList(googleClientId))
-                    .build();
-
-            GoogleIdToken idToken = verifier.verify(data.idToken());
-            
-            if (idToken == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido do Google.");
-            }
-
-            GoogleIdToken.Payload payload = idToken.getPayload();
-            String email = payload.getEmail();
-            String name = (String) payload.get("name");
-
-            // 2. Busca o usuário por e-mail ou cria um novo usando os métodos reais do UserService
-            UserEntity usuario = userService.buscarPorEmail(email)
-                .orElseGet(() -> {
-                    // Passamos uma senha vazia para indicar ao UserService que é uma conta do Google
-                    UserRequestDTO novoUserDTO = new UserRequestDTO(name, email, ""); 
-                    return userService.adicionarUsuario(novoUserDTO);
-                });
-
-            // 3. Reutiliza o seu TokenService para gerar o JWT da aplicação
-            String token = tokenService.generateToken(usuario);
-
-            // 4. Retorna no mesmo formato estruturado de resposta que o seu login tradicional
-            return ResponseEntity.ok(new TokenResponseDTO(token));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro na autenticação com o Google.");
-        }
-    }
-}
-</file>
-
 <file path="src/main/java/ajudavcapi/domain/dto/auth/AuthenticationDTO.java">
 package ajudavcapi.domain.dto.auth;
 
@@ -3805,7 +3747,6 @@ public interface MonthlySummaryRepository extends JpaRepository<MonthlySummaryEn
 <file path="src/main/java/ajudavcapi/domain/repository/WeeklyProgressRepository.java">
 package ajudavcapi.domain.repository;
 
-
 import ajudavcapi.domain.entity.WeeklyProgressEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -3815,13 +3756,135 @@ import java.util.List;
 
 public interface WeeklyProgressRepository extends JpaRepository<WeeklyProgressEntity, Long> {
 
-    // Lista o histórico do grupo ordenado do mais recente para o mais antigo
-    @Query("SELECT w FROM WeeklyProgressEntity w JOIN FETCH w.user WHERE w.group.id = :groupId ORDER BY w.createdAt DESC")
-    List<WeeklyProgressEntity> findByGroupIdOrderByCreatedAtDesc(@Param("groupId") Long groupId);
+    @Query("SELECT w FROM WeeklyProgressEntity w " +
+           "JOIN FETCH w.user " +
+           "JOIN FETCH w.group " +
+           "WHERE w.group.id = :groupId " +
+           "ORDER BY w.createdAt DESC")
+    List<WeeklyProgressEntity> findByGroupIdFetchUser(@Param("groupId") Long groupId);
 
-    // Busca avaliações de um mês e ano específicos para calcular o resumo mensal
     @Query("SELECT w FROM WeeklyProgressEntity w WHERE w.group.id = :groupId AND MONTH(w.createdAt) = :month AND YEAR(w.createdAt) = :year ORDER BY w.createdAt ASC")
     List<WeeklyProgressEntity> findByGroupIdAndMonthAndYear(@Param("groupId") Long groupId, @Param("month") Integer month, @Param("year") Integer year);
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/AuthenticationController.java">
+package ajudavcapi.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+
+import ajudavcapi.domain.dto.auth.AuthenticationDTO;
+import ajudavcapi.domain.dto.auth.TokenResponseDTO;
+import ajudavcapi.domain.dto.auth.GoogleLoginDTO;
+import ajudavcapi.domain.dto.user.UserRequestDTO;
+import ajudavcapi.domain.dto.user.UserResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.TokenService;
+import ajudavcapi.service.UserService;
+import jakarta.validation.Valid;
+import java.net.URI;
+import java.util.Collections;
+
+@RestController
+@RequestMapping("/auth")
+public class AuthenticationController {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private TokenService tokenService;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
+
+    @PostMapping("/login")
+    public ResponseEntity<TokenResponseDTO> login(@RequestBody @Valid AuthenticationDTO data) {
+        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
+        var auth = this.authenticationManager.authenticate(usernamePassword);
+
+        var token = tokenService.generateToken((UserEntity) auth.getPrincipal());
+        return ResponseEntity.ok(new TokenResponseDTO(token));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(
+            @RequestBody @Valid UserRequestDTO data,
+            UriComponentsBuilder uriBuilder) {
+
+        try {
+            UserEntity novoUsuario = userService.adicionarUsuario(data);
+
+            URI uri = uriBuilder
+                    .path("/user/{id}")
+                    .buildAndExpand(novoUsuario.getId())
+                    .toUri();
+
+            return ResponseEntity
+                    .created(uri)
+                    .body(new UserResponseDTO(novoUsuario));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> loginWithGoogle(@RequestBody @Valid GoogleLoginDTO data) {
+        try {
+            // 1. Valida o ID Token recebido do React Native com o Google
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(data.idToken());
+            
+            if (idToken == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido do Google.");
+            }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+
+            // 2. Busca o usuário por e-mail ou cria um novo usando os métodos reais do UserService
+            UserEntity usuario = userService.buscarPorEmail(email)
+                .orElseGet(() -> {
+                    // Passamos uma senha vazia para indicar ao UserService que é uma conta do Google
+                    UserRequestDTO novoUserDTO = new UserRequestDTO(name, email, ""); 
+                    return userService.adicionarUsuario(novoUserDTO);
+                });
+
+            // 3. Reutiliza o seu TokenService para gerar o JWT da aplicação
+            String token = tokenService.generateToken(usuario);
+
+            // 4. Retorna no mesmo formato estruturado de resposta que o seu login tradicional
+            return ResponseEntity.ok(new TokenResponseDTO(token));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro na autenticação com o Google.");
+        }
+    }
 }
 </file>
 
