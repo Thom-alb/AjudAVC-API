@@ -9,5 +9,7 @@ public record GroupMemberResponseDTO(
     String userName,
     String userEmail,
     GroupRole role,
-    LocalDateTime joinedAt
+    LocalDateTime joinedAt,
+    boolean canEditRoutine,
+    boolean canEditProgress
 ) {}

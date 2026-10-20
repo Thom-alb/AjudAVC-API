@@ -20,11 +20,11 @@ public record CreateWeeklyProgressDTO(
     @Max(value = 10, message = "A nota máxima é 10")
     Integer memoryScore,
 
-    @Min(value = 0, message = "A contagem não pode ser negativa") Integer countAnimo,
-    @Min(value = 0, message = "A contagem não pode ser negativa") Integer countFeliz,
-    @Min(value = 0, message = "A contagem não pode ser negativa") Integer countApatia,
-    @Min(value = 0, message = "A contagem não pode ser negativa") Integer countRaiva,
-    @Min(value = 0, message = "A contagem não pode ser negativa") Integer countTriste,
+    Integer countAnimo,
+    Integer countFeliz,
+    Integer countApatia,
+    Integer countRaiva,
+    Integer countTriste,
 
     String description
 ) {}

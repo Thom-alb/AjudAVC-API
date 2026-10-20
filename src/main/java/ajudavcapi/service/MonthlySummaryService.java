@@ -2,6 +2,7 @@ package ajudavcapi.service;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,39 +12,50 @@ import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.domain.entity.WeeklyProgressEntity;
 import ajudavcapi.domain.repository.MonthlySummaryRepository;
 import ajudavcapi.domain.repository.WeeklyProgressRepository;
-import lombok.RequiredArgsConstructor;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.repository.GroupRepository;
 
 @Service
-@RequiredArgsConstructor
 public class MonthlySummaryService {
 
-    private final MonthlySummaryRepository monthlySummaryRepository;
-    private final WeeklyProgressRepository weeklyProgressRepository;
+    @Autowired
+    private MonthlySummaryRepository monthlySummaryRepository;
+
+    @Autowired
+    private WeeklyProgressRepository weeklyProgressRepository;
+
+    @Autowired
+    private GroupRepository groupRepository;
 
     @Transactional
     public MonthlySummaryResponseDTO getOrCalculateSummary(Integer month, Integer year, UserEntity userLogado) {
-        Long groupId = userLogado.getGroup().getId();
+        GroupEntity group = getUserGroup(userLogado);
+        Long groupId = group.getId();
 
-        List<WeeklyProgressEntity> progressList = weeklyProgressRepository.findByGroupIdAndMonthAndYear(groupId, month, year);
+        List<WeeklyProgressEntity> progressList = weeklyProgressRepository.findByGroupIdAndMonthAndYear(groupId, month,
+                year);
 
         if (progressList.isEmpty()) {
             return new MonthlySummaryResponseDTO(null, month, year, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, null, groupId);
         }
 
-        double avgComm = progressList.stream().mapToInt(WeeklyProgressEntity::getCommunicationScore).average().orElse(0.0);
-        double avgMob = progressList.stream().mapToInt(WeeklyProgressEntity::getMobilityScore).average().orElse(0.0);
-        double avgMem = progressList.stream().mapToInt(WeeklyProgressEntity::getMemoryScore).average().orElse(0.0);
+        double avgComm = progressList.stream()
+                .mapToInt(p -> p.getCommunicationScore() != null ? p.getCommunicationScore() : 0).average().orElse(0.0);
+        double avgMob = progressList.stream().mapToInt(p -> p.getMobilityScore() != null ? p.getMobilityScore() : 0)
+                .average().orElse(0.0);
+        double avgMem = progressList.stream().mapToInt(p -> p.getMemoryScore() != null ? p.getMemoryScore() : 0)
+                .average().orElse(0.0);
 
-        int cAnimo = progressList.stream().mapToInt(p -> zeroIfNull(p.getCountAnimo())).sum();
-        int cFeliz = progressList.stream().mapToInt(p -> zeroIfNull(p.getCountFeliz())).sum();
-        int cApatia = progressList.stream().mapToInt(p -> zeroIfNull(p.getCountApatia())).sum();
-        int cRaiva = progressList.stream().mapToInt(p -> zeroIfNull(p.getCountRaiva())).sum();
-        int cTriste = progressList.stream().mapToInt(p -> zeroIfNull(p.getCountTriste())).sum();
+        int cAnimo = progressList.stream().mapToInt(p -> p.getCountAnimo() == null ? 0 : p.getCountAnimo()).sum();
+        int cFeliz = progressList.stream().mapToInt(p -> p.getCountFeliz() == null ? 0 : p.getCountFeliz()).sum();
+        int cApatia = progressList.stream().mapToInt(p -> p.getCountApatia() == null ? 0 : p.getCountApatia()).sum();
+        int cRaiva = progressList.stream().mapToInt(p -> p.getCountRaiva() == null ? 0 : p.getCountRaiva()).sum();
+        int cTriste = progressList.stream().mapToInt(p -> p.getCountTriste() == null ? 0 : p.getCountTriste()).sum();
 
         MonthlySummaryEntity summary = monthlySummaryRepository.findByGroupIdAndMonthAndYear(groupId, month, year)
                 .orElseGet(() -> {
                     MonthlySummaryEntity newEntity = new MonthlySummaryEntity();
-                    newEntity.setGroup(userLogado.getGroup());
+                    newEntity.setGroup(group);
                     newEntity.setMonth(month);
                     newEntity.setYear(year);
                     return newEntity;
@@ -65,15 +77,22 @@ public class MonthlySummaryService {
 
     @Transactional(readOnly = true)
     public List<MonthlySummaryResponseDTO> getGroupSummaries(UserEntity userLogado) {
-        Long groupId = userLogado.getGroup().getId();
+        Long groupId = getUserGroup(userLogado).getId();
         return monthlySummaryRepository.findByGroupIdOrderByYearDescMonthDesc(groupId)
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
     }
 
-    private int zeroIfNull(Integer value) {
-        return value == null ? 0 : value;
+    private GroupEntity getUserGroup(UserEntity user) {
+        if (user == null) {
+            throw new IllegalArgumentException("Usuário autenticado não encontrado.");
+        }
+        if (user.getGroup() != null) {
+            return user.getGroup();
+        }
+        return groupRepository.findByLeaderIdOrMembersUserId(user.getId(), user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
     }
 
     private MonthlySummaryResponseDTO mapToDTO(MonthlySummaryEntity entity) {
@@ -90,7 +109,6 @@ public class MonthlySummaryService {
                 entity.getCountRaiva(),
                 entity.getCountTriste(),
                 entity.getCreatedAt(),
-                entity.getGroup().getId()
-        );
+                entity.getGroup().getId());
     }
 }

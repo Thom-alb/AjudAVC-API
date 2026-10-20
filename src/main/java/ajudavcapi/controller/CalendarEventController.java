@@ -3,6 +3,7 @@ package ajudavcapi.controller;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,14 +22,13 @@ import ajudavcapi.domain.dto.calendarEvent.CreateCalendarEventDTO;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.service.CalendarEventService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/calendar-events")
-@RequiredArgsConstructor
 public class CalendarEventController {
 
-    private final CalendarEventService calendarEventService;
+    @Autowired
+    private CalendarEventService calendarEventService;
 
     // Criar um evento na agenda do grupo
     @PostMapping
@@ -63,9 +63,16 @@ public class CalendarEventController {
         return ResponseEntity.ok(response);
     }
 
-    // Excluir um evento da rotina do grupo
-    @DeleteMapping("/{id}")
+    @PatchMapping("/{id}/assign")
     @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<CalendarEventResponseDTO> assignEvent(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+        return ResponseEntity.ok(calendarEventService.assignEvent(id, userLogado));
+    }
+
+    // Deletar um evento (Somente o Líder)
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEvent(
             @PathVariable Long id,
             @AuthenticationPrincipal UserEntity userLogado) {

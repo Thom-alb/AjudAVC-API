@@ -3,11 +3,10 @@ package ajudavcapi.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ajudavcapi.domain.dto.groupmember.GroupMemberResponseDTO;
 import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberRoleDTO;
+import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberPermissionsDTO;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.service.GroupMemberService;
 import jakarta.validation.Valid;
@@ -39,8 +39,7 @@ public class GroupMemberController {
         return ResponseEntity.ok(members);
     }
 
-    @PatchMapping("/{id}/role")
-    @PreAuthorize("hasRole('LEADER')")
+    @PutMapping("/{id}/role")
     public ResponseEntity<GroupMemberResponseDTO> updateMemberRole(
             @PathVariable Long id,
             @RequestBody @Valid UpdateGroupMemberRoleDTO dto,
@@ -50,8 +49,15 @@ public class GroupMemberController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}/permissions")
+    public ResponseEntity<GroupMemberResponseDTO> updateMemberPermissions(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdateGroupMemberPermissionsDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
+        return ResponseEntity.ok(groupMemberService.updateMemberPermissions(id, dto, userLogado));
+    }
+
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('LEADER')")
     public ResponseEntity<Void> removeMember(
             @PathVariable Long id,
             @AuthenticationPrincipal UserEntity userLogado) {
