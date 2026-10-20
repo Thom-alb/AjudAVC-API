@@ -29,31 +29,25 @@ public class SecurityConfigurations {
 
     private final SecurityFilter securityFilter;
 
-    @Bean 
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // Desativa CSRF (necessário para APIs REST com JWT)
                 .csrf(csrf -> csrf.disable())
-                
-                // Conecta explicitamente o Bean de configuração de CORS criado abaixo
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                
-                // Configuração de sessão STATELESS
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                
                 .authorizeHttpRequests(req -> {
-                    // Libera requisições de PREFLIGHT (OPTIONS) do navegador/CORS
                     req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
-                    
-                    // Rotas públicas de Autenticação (Login estruturado e Google OAuth2 unificados)
+
+                    // Rotas públicas do Swagger
+                    req.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll();
+
+                    // Rotas públicas de Autenticação
                     req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/register").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/auth/google").permitAll();
-                    
-                    // Exige que o JWT do SecurityFilter esteja presente para todas as outras rotas do app
-                    req.anyRequest().authenticated(); 
+
+                    req.anyRequest().authenticated();
                 })
-                // Intercepta as chamadas privadas usando seu filtro padrão de JWT
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -61,14 +55,8 @@ public class SecurityConfigurations {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Aceita qualquer origem (localhost:8081, Expo Go, Render, etc.)
         configuration.setAllowedOriginPatterns(List.of("*"));
-        
-        // Métodos HTTP permitidos
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
-        
-        // Headers e Credenciais
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
@@ -79,7 +67,8 @@ public class SecurityConfigurations {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -87,4 +76,4 @@ public class SecurityConfigurations {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-}
+}   
