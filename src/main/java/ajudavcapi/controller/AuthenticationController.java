@@ -1,4 +1,11 @@
+
 package ajudavcapi.controller;
+
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +37,7 @@ import java.net.URI;
 import java.util.Collections;
 
 @RestController
+@Tag(name = "Autenticação", description = "Autenticação local, cadastro e login com Google.")
 @RequestMapping("/auth")
 public class AuthenticationController {
 
@@ -45,8 +53,17 @@ public class AuthenticationController {
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;
 
+    @Operation(summary = "Autenticar com e-mail e senha", description = "Valida as credenciais e retorna um JWT para uso no cabeçalho Authorization: Bearer. Não exige JWT.", security = {})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
     @PostMapping("/login")
-    public ResponseEntity<TokenResponseDTO> login(@RequestBody @Valid AuthenticationDTO data) {
+    public ResponseEntity<TokenResponseDTO> login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para AuthenticationDTO", required = true) @RequestBody @Valid AuthenticationDTO data) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
         var auth = this.authenticationManager.authenticate(usernamePassword);
 
@@ -54,9 +71,18 @@ public class AuthenticationController {
         return ResponseEntity.ok(new TokenResponseDTO(token));
     }
 
+    @Operation(summary = "Cadastrar conta", description = "Cria uma conta local e retorna o usuário cadastrado. Não exige JWT.", security = {})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso; confira o cabeçalho Location"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Grupo ou recurso relacionado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
+        })
     @PostMapping("/register")
     public ResponseEntity<?> register(
-            @RequestBody @Valid UserRequestDTO data,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UserRequestDTO", required = true) @RequestBody @Valid UserRequestDTO data,
             UriComponentsBuilder uriBuilder) {
 
         try {
@@ -78,8 +104,17 @@ public class AuthenticationController {
         }
     }
 
+    @Operation(summary = "Autenticar com Google", description = "Valida o ID token emitido pelo Google e retorna um JWT da aplicação. Não exige JWT.", security = {})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
     @PostMapping("/google")
-    public ResponseEntity<?> loginWithGoogle(@RequestBody @Valid GoogleLoginDTO data) {
+    public ResponseEntity<?> loginWithGoogle(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para GoogleLoginDTO", required = true) @RequestBody @Valid GoogleLoginDTO data) {
         try {
             // 1. Valida o ID Token recebido do React Native com o Google
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())

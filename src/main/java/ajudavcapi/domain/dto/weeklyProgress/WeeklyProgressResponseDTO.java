@@ -1,7 +1,11 @@
+
 package ajudavcapi.domain.dto.weeklyProgress;
 
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
+@Schema(description = "Registro de evolução semanal com pontuações e métricas de atividades.")
 public record WeeklyProgressResponseDTO(
     Long id,
     Integer communicationScore,
