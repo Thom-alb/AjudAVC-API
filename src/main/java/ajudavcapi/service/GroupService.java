@@ -166,9 +166,9 @@ public class GroupService {
 
         group.addMember(newMember);
 
-        groupRepository.save(group);
+        GroupEntity savedGroup = groupRepository.save(group);
 
-        return new GroupResponseDTO(group);
+        return new GroupResponseDTO(savedGroup);
     }
 
     @Transactional(readOnly = true)
