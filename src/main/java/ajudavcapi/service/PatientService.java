@@ -78,7 +78,8 @@ public class PatientService {
         group.setPatient(savedPatient);
         groupRepository.save(group);
         
-        System.out.println("💾 DOENÇAS SALVAS NO BANCO: " + savedPatient.getDiseases().size());
+        // ✅ PRINT DO MÉTODO CREATE (Usando savedPatient)
+        System.out.println("💾 [CREATE] DOENÇAS SALVAS NO BANCO: " + savedPatient.getDiseases().size());
         savedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
         
         return mapToResponseDTO(
@@ -154,10 +155,11 @@ public class PatientService {
         }
 
         PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
-        
-        System.out.println("💾 DOENÇAS SALVAS NO BANCO: " + savedPatient.getDiseases().size());
-        savedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
-        
+
+        // ✅ CORRIGIDO: PRINT DO MÉTODO UPDATE (Mudado de savedPatient para updatedPatient)
+        System.out.println("💾 [UPDATE] DOENÇAS ATUALIZADAS NO BANCO: " + updatedPatient.getDiseases().size());
+        updatedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
+
         return mapToResponseDTO(
             updatedPatient,
             group.getId()
