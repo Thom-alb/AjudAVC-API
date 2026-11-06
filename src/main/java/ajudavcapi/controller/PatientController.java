@@ -1,6 +1,4 @@
-
 package ajudavcapi.controller;
-
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,7 +9,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,19 +37,18 @@ public class PatientController {
         this.patientService = patientService;
     }
 
-    @Operation(summary = "Cadastrar paciente", description = "Cria o paciente do grupo. A implementação atual restringe a rota ao papel global LEADER; confirme que esse papel é sincronizado com o papel de líder no grupo.")
+    @Operation(summary = "Cadastrar paciente", description = "Cria o paciente do grupo.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso; confira o cabeçalho Location"),
+            @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
             @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
-            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
-            @ApiResponse(responseCode = "404", description = "Grupo ou recurso relacionado não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão"),
+            @ApiResponse(responseCode = "404", description = "Grupo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito ou duplicidade")
         })
     @PostMapping
-    @PreAuthorize("hasRole('LEADER')")
     public ResponseEntity<PatientResponseDTO> createPatient(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para CreatePatientDTO", required = true) @RequestBody @Valid CreatePatientDTO dto,
+            @RequestBody @Valid CreatePatientDTO dto,
             @AuthenticationPrincipal UserEntity userLogado,
             UriComponentsBuilder uriBuilder) {
 
@@ -69,11 +65,8 @@ public class PatientController {
     @Operation(summary = "Consultar paciente do grupo", description = "Retorna o paciente vinculado ao grupo do usuário autenticado.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
             @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
-            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
-            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado")
         })
     @GetMapping("/me")
     public ResponseEntity<PatientResponseDTO> getMyPatient(
@@ -84,20 +77,18 @@ public class PatientController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Atualizar paciente", description = "Atualiza dados do paciente, após validar vínculo e permissões do usuário no grupo.")
+    @Operation(summary = "Atualizar paciente", description = "Atualiza dados do paciente, após validar vínculo no grupo.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Recurso atualizado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
-            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
-            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
-            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão"),
+            @ApiResponse(responseCode = "404", description = "Não encontrado")
         })
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('LEADER')")
     public ResponseEntity<PatientResponseDTO> updatePatient(
-            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UpdatePatientDTO", required = true) @RequestBody @Valid UpdatePatientDTO dto,
+            @PathVariable Long id,
+            @RequestBody @Valid UpdatePatientDTO dto,
             @AuthenticationPrincipal UserEntity userLogado) {
 
         PatientResponseDTO response = patientService.updatePatient(id, dto, userLogado);
