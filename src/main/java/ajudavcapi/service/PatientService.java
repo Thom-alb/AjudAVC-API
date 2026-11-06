@@ -77,8 +77,10 @@ public class PatientService {
 
         group.setPatient(savedPatient);
         groupRepository.save(group);
+        
         System.out.println("💾 DOENÇAS SALVAS NO BANCO: " + savedPatient.getDiseases().size());
         savedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
+        
         return mapToResponseDTO(
             savedPatient,
             group.getId()
@@ -152,7 +154,10 @@ public class PatientService {
         }
 
         PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
-
+        
+        System.out.println("💾 DOENÇAS SALVAS NO BANCO: " + savedPatient.getDiseases().size());
+        savedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
+        
         return mapToResponseDTO(
             updatedPatient,
             group.getId()
