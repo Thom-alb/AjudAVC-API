@@ -3,9 +3,7 @@ package ajudavcapi.service;
 import java.time.LocalDateTime;
 import java.time.DayOfWeek;
 import java.time.temporal.TemporalAdjusters;
-import java.time.temporal.WeekFields;
 import java.util.List;
-import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,12 +50,23 @@ public class WeeklyProgressService {
 
     @Transactional
     public WeeklyProgressResponseDTO createProgress(CreateWeeklyProgressDTO dto, UserEntity userLogado) {
-        WeeklyProgressEntity entity = new WeeklyProgressEntity();
-        entity.setUser(userLogado);
-
         GroupEntity group = getUserGroup(userLogado);
         requireProgressPermission(group, userLogado);
+
+        // Procura se já existe um registro para esta semana exata (1 a 4) do mês/ano no grupo
+        WeeklyProgressEntity entity = weeklyProgressRepository
+                .findByGroupIdAndYearAndMonthAndWeekOfMonth(
+                    group.getId(), dto.year(), dto.month(), dto.weekOfMonth()
+                )
+                .orElse(new WeeklyProgressEntity());
+
+        boolean isNew = (entity.getId() == null);
+
+        entity.setUser(userLogado);
         entity.setGroup(group);
+        entity.setYear(dto.year());
+        entity.setMonth(dto.month());
+        entity.setWeekOfMonth(dto.weekOfMonth());
 
         entity.setCommunicationScore(dto.communicationScore());
         entity.setMobilityScore(dto.mobilityScore());
@@ -70,17 +79,18 @@ public class WeeklyProgressService {
         entity.setCountTriste(dto.countTriste() != null ? dto.countTriste() : 0);
         entity.setDescription(dto.description());
 
-        LocalDateTime now = LocalDateTime.now();
-        entity.setCreatedAt(now);
-
-        int weekOfMonth = now.get(WeekFields.of(Locale.getDefault()).weekOfMonth());
-        entity.setWeekOfMonth(weekOfMonth);
+        if (isNew) {
+            entity.setCreatedAt(LocalDateTime.now());
+        }
 
         WeeklyProgressEntity saved = weeklyProgressRepository.save(entity);
+        
         activityLogService.createSystemLog(
-                userLogado, group, "Progresso semanal registrado",
-                "Foi registrado um novo acompanhamento semanal do paciente.",
-                "CREATE_PROGRESS", "AUDIT");
+                userLogado, group, 
+                isNew ? "Progresso semanal registrado" : "Progresso semanal atualizado",
+                "Foi " + (isNew ? "registrado" : "atualizado") + " o acompanhamento da Semana " + dto.weekOfMonth() + " do mês " + dto.month() + "/" + dto.year() + ".",
+                isNew ? "CREATE_PROGRESS" : "UPDATE_PROGRESS", "AUDIT");
+                
         return mapToDTO(saved);
     }
 

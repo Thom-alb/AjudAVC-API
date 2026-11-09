@@ -54,6 +54,7 @@ src/
     java/
       ajudavcapi/
         config/
+          OpenApiConfig.java
           SecurityConfigurations.java
           SecurityFilter.java
         controller/
@@ -192,19 +193,6 @@ org.eclipse.jdt.apt.genSrcDir=target/generated-sources/annotations
 org.eclipse.jdt.apt.genTestSrcDir=target/generated-test-sources/test-annotations
 </file>
 
-<file path=".settings/org.eclipse.jdt.core.prefs">
-eclipse.preferences.version=1
-org.eclipse.jdt.core.compiler.codegen.methodParameters=generate
-org.eclipse.jdt.core.compiler.codegen.targetPlatform=21
-org.eclipse.jdt.core.compiler.compliance=21
-org.eclipse.jdt.core.compiler.problem.enablePreviewFeatures=disabled
-org.eclipse.jdt.core.compiler.problem.forbiddenReference=error
-org.eclipse.jdt.core.compiler.problem.reportPreviewFeatures=ignore
-org.eclipse.jdt.core.compiler.processAnnotations=enabled
-org.eclipse.jdt.core.compiler.release=enabled
-org.eclipse.jdt.core.compiler.source=21
-</file>
-
 <file path=".settings/org.eclipse.m2e.core.prefs">
 activeProfiles=
 eclipse.preferences.version=1
@@ -215,6 +203,69 @@ version=1
 <file path=".settings/org.springframework.ide.eclipse.prefs">
 boot.validation.initialized=true
 eclipse.preferences.version=1
+</file>
+
+<file path="src/main/java/ajudavcapi/config/OpenApiConfig.java">
+package ajudavcapi.config;
+
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@OpenAPIDefinition(
+    info = @Info(
+        title = "AjudAVC API",
+        version = "v1",
+        description = "API de apoio a cuidadores e acompanhamento de pacientes pós-AVC. Recursos são isolados pelo grupo de cuidado do usuário autenticado.",
+        contact = @Contact(name = "Equipe AjudAVC")
+    ),
+    security = @SecurityRequirement(name = "bearer-key"),
+    tags = {
+        @Tag(name = "Autenticação", description = "Cadastro e autenticação de usuários"),
+        @Tag(name = "Grupos de Cuidado", description = "Grupos e isolamento multi-tenant"),
+        @Tag(name = "Pacientes", description = "Dados do paciente vinculado ao grupo"),
+        @Tag(name = "Atividades e Diário", description = "Atividades, registros e auditoria"),
+        @Tag(name = "Agenda e Calendário", description = "Eventos e tarefas de cuidado"),
+        @Tag(name = "Membros da Rede", description = "Papéis e permissões de membros"),
+        @Tag(name = "Progresso Semanal", description = "Registros de evolução semanal"),
+        @Tag(name = "Resumos Mensais", description = "Indicadores mensais agregados"),
+        @Tag(name = "Gestão de Usuários", description = "Cadastro e manutenção de usuários")
+    }
+)
+@SecurityScheme(
+    name = "bearer-key",
+    type = SecuritySchemeType.HTTP,
+    scheme = "bearer",
+    bearerFormat = "JWT",
+    description = "Informe somente o JWT. O Swagger adiciona o prefixo Bearer automaticamente."
+)
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI ajudavcOpenAPI() {
+        return new OpenAPI()
+            .info(new io.swagger.v3.oas.models.info.Info()
+                .title("AjudAVC API")
+                .version("v1")
+                .description("API de apoio a cuidadores e acompanhamento de pacientes pós-AVC."))
+            .components(new Components().addSecuritySchemes("bearer-key",
+                new io.swagger.v3.oas.models.security.SecurityScheme()
+                    .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.HTTP)
+                    .scheme("bearer")
+                    .bearerFormat("JWT")
+                    .description("Informe somente o JWT; o Swagger inclui Bearer.")))
+            .addSecurityItem(new io.swagger.v3.oas.models.security.SecurityRequirement().addList("bearer-key"));
+    }
+}
 </file>
 
 <file path="src/main/java/ajudavcapi/domain/dto/activitylog/ActivityLogResponseDTO.java">
@@ -233,37 +284,6 @@ public record ActivityLogResponseDTO(
     String authorName,
     Long groupId
 ) {}
-</file>
-
-<file path="src/main/java/ajudavcapi/domain/dto/activitylog/CreateActivityLogDTO.java">
-package ajudavcapi.domain.dto.activitylog;
-
-import java.time.LocalDateTime;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-
-public record CreateActivityLogDTO(
-    @NotBlank(message = "O título da atividade é obrigatório")
-    String title,
-
-    String description,
-
-    @NotNull(message = "A data e hora da atividade são obrigatórias")
-    LocalDateTime activityDate,
-
-    String category, // Ex: "MEDICATION", "HYGIENE", "FEEDING", "THERAPY"
-
-    String status    // PENDING (padrão), COMPLETED, CANCELED
-) {}
-</file>
-
-<file path="src/main/java/ajudavcapi/domain/dto/auth/GoogleLoginDTO.java">
-package ajudavcapi.domain.dto.auth;
-
-import jakarta.validation.constraints.NotBlank;
-
-public record GoogleLoginDTO(@NotBlank String idToken) {}
 </file>
 
 <file path="src/main/java/ajudavcapi/domain/dto/disease/DiseaseResponseDTO.java">
@@ -300,41 +320,6 @@ public record StandardErrorDTO(
 }
 </file>
 
-<file path="src/main/java/ajudavcapi/domain/dto/group/GroupResponseDTO.java">
-package ajudavcapi.domain.dto.group;
-
-import ajudavcapi.domain.entity.GroupEntity;
-
-public record GroupResponseDTO(
-    Long id,
-    String name,
-    String inviteCode,
-    String patientName
-) {
-    public GroupResponseDTO(GroupEntity entity) {
-        this(
-            entity.getId(),
-            entity.getName(),
-            entity.getInviteCode(),
-            entity.getPatient() != null ? entity.getPatient().getName() : null
-        );
-    }
-}
-</file>
-
-<file path="src/main/java/ajudavcapi/domain/dto/group/JoinGroupDTO.java">
-package ajudavcapi.domain.dto.group;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-
-public record JoinGroupDTO(
-    @NotBlank(message = "O código de convite é obrigatório")
-    @Size(min = 6, max = 6, message = "O código de convite deve ter exatamente 6 caracteres")
-    String inviteCode
-) {}
-</file>
-
 <file path="src/main/java/ajudavcapi/domain/dto/group/UpdateGroupDTO.java">
 package ajudavcapi.domain.dto.group;
 
@@ -350,32 +335,6 @@ public record UpdateGroupDTO(
     CreatePatientDTO patient
 ) {
 }
-</file>
-
-<file path="src/main/java/ajudavcapi/domain/dto/groupmember/UpdateGroupMemberPermissionsDTO.java">
-package ajudavcapi.domain.dto.groupmember;
-
-import jakarta.validation.constraints.NotNull;
-
-public record UpdateGroupMemberPermissionsDTO(
-    @NotNull(message = "A permissão de editar rotina é obrigatória")
-    Boolean canEditRoutine,
-    @NotNull(message = "A permissão de editar progresso é obrigatória")
-    Boolean canEditProgress
-) {}
-</file>
-
-<file path="src/main/java/ajudavcapi/domain/dto/groupmember/UpdateGroupMemberRoleDTO.java">
-package ajudavcapi.domain.dto.groupmember;
-
-
-import ajudavcapi.domain.enums.GroupRole;
-import jakarta.validation.constraints.NotNull;
-
-public record UpdateGroupMemberRoleDTO(
-    @NotNull(message = "A nova função é obrigatória")
-    GroupRole role
-) {}
 </file>
 
 <file path="src/main/java/ajudavcapi/domain/dto/monthlySummary/CreateMonthlySummaryDTO.java">
@@ -638,135 +597,141 @@ ALTER TABLE weekly_progress DROP COLUMN mood_state;
 </factorypath>
 </file>
 
-<file path="src/main/java/ajudavcapi/controller/WeeklyProgressController.java">
-package ajudavcapi.controller;
+<file path=".settings/org.eclipse.jdt.core.prefs">
+eclipse.preferences.version=1
+org.eclipse.jdt.core.compiler.annotation.missingNonNullByDefaultAnnotation=ignore
+org.eclipse.jdt.core.compiler.annotation.nonnull=javax.annotation.Nonnull
+org.eclipse.jdt.core.compiler.annotation.nonnullbydefault=javax.annotation.ParametersAreNonnullByDefault
+org.eclipse.jdt.core.compiler.annotation.nullable=javax.annotation.Nullable
+org.eclipse.jdt.core.compiler.annotation.nullanalysis=enabled
+org.eclipse.jdt.core.compiler.codegen.methodParameters=generate
+org.eclipse.jdt.core.compiler.codegen.targetPlatform=21
+org.eclipse.jdt.core.compiler.compliance=21
+org.eclipse.jdt.core.compiler.problem.enablePreviewFeatures=disabled
+org.eclipse.jdt.core.compiler.problem.forbiddenReference=error
+org.eclipse.jdt.core.compiler.problem.nullAnnotationInferenceConflict=warning
+org.eclipse.jdt.core.compiler.problem.nullReference=warning
+org.eclipse.jdt.core.compiler.problem.nullSpecViolation=warning
+org.eclipse.jdt.core.compiler.problem.potentialNullReference=warning
+org.eclipse.jdt.core.compiler.problem.reportPreviewFeatures=ignore
+org.eclipse.jdt.core.compiler.problem.syntacticNullAnalysisForFields=enabled
+org.eclipse.jdt.core.compiler.processAnnotations=enabled
+org.eclipse.jdt.core.compiler.release=enabled
+org.eclipse.jdt.core.compiler.source=21
+</file>
 
-import java.net.URI;
-import java.util.List;
+<file path="src/main/java/ajudavcapi/domain/dto/activitylog/CreateActivityLogDTO.java">
+package ajudavcapi.domain.dto.activitylog;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
-import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.WeeklyProgressService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
 
-@RestController
-@RequestMapping("/weekly-progress")
-@RequiredArgsConstructor
-public class WeeklyProgressController {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-    private final WeeklyProgressService weeklyProgressService;
+public record CreateActivityLogDTO(
+    @NotBlank(message = "O título da atividade é obrigatório")
+    @Schema(description = "Título curto da atividade ou registro do diário.")
+    String title,
 
-    // Registrar uma nova avaliação de progresso semanal (Líder ou Membro)
-    @PostMapping
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<WeeklyProgressResponseDTO> createProgress(
-            @RequestBody @Valid CreateWeeklyProgressDTO dto,
-            @AuthenticationPrincipal UserEntity userLogado,
-            UriComponentsBuilder uriBuilder) {
+    @Schema(description = "Detalhes adicionais da atividade.")
 
-        WeeklyProgressResponseDTO response = weeklyProgressService.createProgress(dto, userLogado);
+    String description,
 
-        URI uri = uriBuilder.path("/weekly-progress/{id}").buildAndExpand(response.id()).toUri();
-        return ResponseEntity.created(uri).body(response);
-    }
+    @NotNull(message = "A data e hora da atividade são obrigatórias")
+    @Schema(description = "Data e hora da atividade no formato ISO local.") LocalDateTime activityDate,
 
-    // Listar o histórico de avaliações do grupo para renderizar os gráficos/evolução no app
-    @GetMapping
-    public ResponseEntity<List<WeeklyProgressResponseDTO>> getGroupProgressHistory(
-            @AuthenticationPrincipal UserEntity userLogado) {
+    @Schema(description = "Categoria da atividade, conforme os valores aceitos pela API.")
 
-        List<WeeklyProgressResponseDTO> history = weeklyProgressService.getGroupProgressHistory(userLogado);
-        return ResponseEntity.ok(history);
-    }
+    String category, // Ex: "MEDICATION", "HYGIENE", "FEEDING", "THERAPY"
 
-    // Deletar um registro do histórico
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<Void> deleteProgress(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserEntity userLogado) {
+    @Schema(description = "Estado inicial da atividade, conforme os valores aceitos pela API.")
 
-        weeklyProgressService.deleteProgress(id, userLogado);
-        return ResponseEntity.noContent().build();
+    String status    // PENDING (padrão), COMPLETED, CANCELED
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/auth/GoogleLoginDTO.java">
+package ajudavcapi.domain.dto.auth;
+
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+
+public record GoogleLoginDTO(@NotBlank @Schema(description = "ID token recebido do SDK do Google; será validado pela API.") String idToken) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/group/GroupResponseDTO.java">
+package ajudavcapi.domain.dto.group;
+
+import ajudavcapi.domain.entity.GroupEntity;
+
+public record GroupResponseDTO(
+    Long id,
+    String name,
+    String inviteCode,
+    String patientName,
+    Long patientId 
+) {
+    public GroupResponseDTO(GroupEntity entity) {
+        this(
+            entity.getId(),
+            entity.getName(),
+            entity.getInviteCode(),
+            entity.getPatient() != null ? entity.getPatient().getName() : null,
+            entity.getPatient() != null ? entity.getPatient().getId() : null
+        );
     }
 }
 </file>
 
-<file path="src/main/java/ajudavcapi/domain/dto/auth/TokenResponseDTO.java">
-package ajudavcapi.domain.dto.auth;
+<file path="src/main/java/ajudavcapi/domain/dto/group/JoinGroupDTO.java">
+package ajudavcapi.domain.dto.group;
 
-public record TokenResponseDTO(String token) {}
-</file>
 
-<file path="src/main/java/ajudavcapi/domain/dto/calendarEvent/CalendarEventResponseDTO.java">
-package ajudavcapi.domain.dto.calendarEvent;
-
-import java.time.LocalDateTime;
-
-public record CalendarEventResponseDTO(
-    Long id,
-    String title,
-    String description,
-    LocalDateTime eventDateTime,
-    String eventCategory,
-    boolean completed,
-    String createdByName,
-    Long groupId,
-    Long assignedUserId,
-    String assignedUserName
-) {}
-</file>
-
-<file path="src/main/java/ajudavcapi/domain/dto/calendarEvent/CreateCalendarEventDTO.java">
-package ajudavcapi.domain.dto.calendarEvent;
-
-import java.time.LocalDateTime;
-import jakarta.validation.constraints.FutureOrPresent;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
-public record CreateCalendarEventDTO(
-    @NotBlank(message = "O título do evento é obrigatório")
-    String title,
-    String description,
-    @NotNull(message = "A data e hora do evento são obrigatórias")
-    @FutureOrPresent(message = "A data do evento não pode estar no passado")
-    LocalDateTime eventDateTime,
-    @NotNull(message = "A categoria do evento é obrigatória")
-    String eventCategory,
-    Boolean assignToCreator
+public record JoinGroupDTO(
+    @NotBlank(message = "O código de convite é obrigatório")
+    @Size(min = 6, max = 6, message = "O código de convite deve ter exatamente 6 caracteres")
+    @Schema(description = "Código de convite de 6 caracteres do grupo.")
+    String inviteCode
 ) {}
 </file>
 
-<file path="src/main/java/ajudavcapi/domain/dto/groupmember/GroupMemberResponseDTO.java">
+<file path="src/main/java/ajudavcapi/domain/dto/groupmember/UpdateGroupMemberPermissionsDTO.java">
 package ajudavcapi.domain.dto.groupmember;
 
-import java.time.LocalDateTime;
-import ajudavcapi.domain.enums.GroupRole;
 
-public record GroupMemberResponseDTO(
-    Long id,
-    Long userId,
-    String userName,
-    String userEmail,
-    GroupRole role,
-    LocalDateTime joinedAt,
-    boolean canEditRoutine,
-    boolean canEditProgress
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+
+public record UpdateGroupMemberPermissionsDTO(
+    @NotNull(message = "A permissão de editar rotina é obrigatória")
+    @Schema(description = "Autoriza o membro a editar a rotina do grupo.")
+    Boolean canEditRoutine,
+    @NotNull(message = "A permissão de editar progresso é obrigatória")
+    @Schema(description = "Autoriza o membro a editar registros de progresso.")
+    Boolean canEditProgress
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/groupmember/UpdateGroupMemberRoleDTO.java">
+package ajudavcapi.domain.dto.groupmember;
+
+
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import ajudavcapi.domain.enums.GroupRole;
+import jakarta.validation.constraints.NotNull;
+
+public record UpdateGroupMemberRoleDTO(
+    @NotNull(message = "A nova função é obrigatória")
+    @Schema(description = "Papel do membro dentro do grupo, por exemplo LEADER ou MEMBER.")
+    GroupRole role
 ) {}
 </file>
 
@@ -1178,227 +1143,104 @@ public class SecurityFilter extends OncePerRequestFilter {
 }
 </file>
 
-<file path="src/main/java/ajudavcapi/controller/GroupController.java">
+<file path="src/main/java/ajudavcapi/controller/WeeklyProgressController.java">
 package ajudavcapi.controller;
+
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.net.URI;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import ajudavcapi.domain.dto.group.CreateGroupDTO;
-import ajudavcapi.domain.dto.group.GroupResponseDTO;
-import ajudavcapi.domain.dto.group.JoinGroupDTO;
-import ajudavcapi.domain.dto.group.UpdateGroupDTO;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.GroupService;
-import jakarta.validation.Valid;
-
-@RestController
-@RequestMapping("/groups")
-public class GroupController {
-
-    private final GroupService groupService;
-
-    public GroupController(GroupService groupService) {
-        this.groupService = groupService;
-    }
-
-    /**
-     * Criar um novo Grupo de Cuidado.
-     */
-    @PostMapping
-    public ResponseEntity<GroupResponseDTO> createGroup(
-            @RequestBody @Valid CreateGroupDTO dto,
-            @AuthenticationPrincipal UserEntity userLogado,
-            UriComponentsBuilder uriBuilder) {
-
-        GroupResponseDTO response = groupService.createGroup(dto, userLogado);
-
-        URI uri = uriBuilder.path("/groups/{id}").buildAndExpand(response.id()).toUri();
-        return ResponseEntity.created(uri).body(response);
-    }
-
-    /**
-     * Atualizar dados do Grupo (e do Paciente associado).
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<GroupResponseDTO> updateGroup(
-            @PathVariable Long id,
-            @RequestBody @Valid UpdateGroupDTO dto,
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        GroupResponseDTO response = groupService.updateGroup(id, dto, userLogado);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Entrar em um grupo existente informando o código de convite.
-     */
-    @PostMapping("/join")
-    public ResponseEntity<GroupResponseDTO> joinGroup(
-            @RequestBody @Valid JoinGroupDTO dto,
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        GroupResponseDTO response = groupService.joinGroup(dto, userLogado);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Consultar informações do grupo do usuário logado.
-     */
-    @GetMapping("/me")
-    public ResponseEntity<GroupResponseDTO> getMyGroup(
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        GroupResponseDTO response = groupService.getMyGroup(userLogado);
-        
-        if (response == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Consultar grupo por ID.
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<GroupResponseDTO> getGroupById(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        GroupResponseDTO response = groupService.getGroupById(id, userLogado);
-        return ResponseEntity.ok(response);
-    }
-}
-</file>
-
-<file path="src/main/java/ajudavcapi/controller/MonthlySummaryController.java">
-package ajudavcapi.controller;
-
 import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.MonthlySummaryService;
-import lombok.RequiredArgsConstructor;
-
-@RestController
-@RequestMapping("/monthly-summaries")
-@RequiredArgsConstructor
-public class MonthlySummaryController {
-
-    private final MonthlySummaryService monthlySummaryService;
-
-    // Retorna o resumo consolidado do mês (calculado em tempo real com base nos registros do mês)
-    @GetMapping("/filter")
-    public ResponseEntity<MonthlySummaryResponseDTO> getSummaryByMonthAndYear(
-            @RequestParam Integer month,
-            @RequestParam Integer year,
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        MonthlySummaryResponseDTO response = monthlySummaryService.getOrCalculateSummary(month, year, userLogado);
-        return ResponseEntity.ok(response);
-    }
-
-    // Histórico de todos os resumos do grupo
-    @GetMapping
-    public ResponseEntity<List<MonthlySummaryResponseDTO>> getGroupSummaries(
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        List<MonthlySummaryResponseDTO> summaries = monthlySummaryService.getGroupSummaries(userLogado);
-        return ResponseEntity.ok(summaries);
-    }
-}
-</file>
-
-<file path="src/main/java/ajudavcapi/controller/PatientController.java">
-package ajudavcapi.controller;
-
-import java.net.URI;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import ajudavcapi.domain.dto.patient.CreatePatientDTO;
-import ajudavcapi.domain.dto.patient.PatientResponseDTO;
-import ajudavcapi.domain.dto.patient.UpdatePatientDTO;
+import ajudavcapi.domain.dto.weeklyProgress.CreateWeeklyProgressDTO;
+import ajudavcapi.domain.dto.weeklyProgress.WeeklyProgressResponseDTO;
 import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.PatientService;
+import ajudavcapi.service.WeeklyProgressService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/patients")
-public class PatientController {
+@Tag(name = "Progresso Semanal", description = "Registros de evolução semanal do paciente e indicadores de atividades.")
+@RequestMapping("/weekly-progress")
+@RequiredArgsConstructor
+public class WeeklyProgressController {
 
-    private final PatientService patientService;
+    private final WeeklyProgressService weeklyProgressService;
 
-    public PatientController(PatientService patientService) {
-        this.patientService = patientService;
-    }
-
+    // Registrar uma nova avaliação de progresso semanal (Líder ou Membro)
+    @Operation(summary = "Registrar progresso semanal", description = "Registra uma avaliação de comunicação, mobilidade, memória, humor e descrição. O usuário precisa pertencer ao grupo; regras de edição adicionais são validadas pelo serviço.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso; confira o cabeçalho Location"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Grupo ou recurso relacionado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
+        })
     @PostMapping
-    @PreAuthorize("hasRole('LEADER')")
-    public ResponseEntity<PatientResponseDTO> createPatient(
-            @RequestBody @Valid CreatePatientDTO dto,
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<WeeklyProgressResponseDTO> createProgress(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para CreateWeeklyProgressDTO", required = true) @RequestBody @Valid CreateWeeklyProgressDTO dto,
             @AuthenticationPrincipal UserEntity userLogado,
             UriComponentsBuilder uriBuilder) {
 
-        PatientResponseDTO response = patientService.createPatient(dto, userLogado);
+        WeeklyProgressResponseDTO response = weeklyProgressService.createProgress(dto, userLogado);
 
-        URI uri = uriBuilder
-                .path("/patients/{id}")
-                .buildAndExpand(response.id())
-                .toUri();
-
+        URI uri = uriBuilder.path("/weekly-progress/{id}").buildAndExpand(response.id()).toUri();
         return ResponseEntity.created(uri).body(response);
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<PatientResponseDTO> getMyPatient(
+    // Listar o histórico de avaliações do grupo para renderizar os gráficos/evolução no app
+    @Operation(summary = "Consultar histórico de progresso", description = "Retorna os registros de progresso do grupo do usuário autenticado, respeitando o isolamento por grupo.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @GetMapping
+    public ResponseEntity<List<WeeklyProgressResponseDTO>> getGroupProgressHistory(
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        PatientResponseDTO response = patientService.getPatientByGroup(userLogado);
-
-        return ResponseEntity.ok(response);
+        List<WeeklyProgressResponseDTO> history = weeklyProgressService.getGroupProgressHistory(userLogado);
+        return ResponseEntity.ok(history);
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('LEADER')")
-    public ResponseEntity<PatientResponseDTO> updatePatient(
-            @PathVariable Long id,
-            @RequestBody @Valid UpdatePatientDTO dto,
+    // Deletar um registro do histórico
+    @Operation(summary = "Excluir registro de progresso", description = "Exclui um registro acessível no grupo conforme as regras de autorização do serviço.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Recurso excluído sem corpo de resposta"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para excluir o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Exclusão conflita com regra de negócio")
+        })
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<Void> deleteProgress(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        PatientResponseDTO response = patientService.updatePatient(id, dto, userLogado);
-
-        return ResponseEntity.ok(response);
+        weeklyProgressService.deleteProgress(id, userLogado);
+        return ResponseEntity.noContent().build();
     }
 }
 </file>
@@ -1418,47 +1260,82 @@ public record RegisterDTO(
 }
 </file>
 
-<file path="src/main/java/ajudavcapi/domain/dto/group/CreateGroupDTO.java">
-package ajudavcapi.domain.dto.group;
+<file path="src/main/java/ajudavcapi/domain/dto/auth/TokenResponseDTO.java">
+package ajudavcapi.domain.dto.auth;
 
-import ajudavcapi.domain.dto.patient.CreatePatientDTO;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 
-public record CreateGroupDTO(
-
-    @NotBlank(message = "O nome do grupo é obrigatório.")
-    String name,
-
-    @Valid
-    CreatePatientDTO patient
-
-) {
-}
+import io.swagger.v3.oas.annotations.media.Schema;
+@Schema(description = "Token JWT emitido pela API após autenticação.")
+public record TokenResponseDTO(String token) {}
 </file>
 
-<file path="src/main/java/ajudavcapi/domain/dto/user/UserRequestDTO.java">
-package ajudavcapi.domain.dto.user;
+<file path="src/main/java/ajudavcapi/domain/dto/calendarEvent/CalendarEventResponseDTO.java">
+package ajudavcapi.domain.dto.calendarEvent;
 
-import jakarta.validation.constraints.Email;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
+
+@Schema(description = "Representação de evento da agenda, incluindo estado e responsável.")
+public record CalendarEventResponseDTO(
+    Long id,
+    String title,
+    String description,
+    LocalDateTime eventDateTime,
+    String eventCategory,
+    boolean completed,
+    String createdByName,
+    Long groupId,
+    Long assignedUserId,
+    String assignedUserName
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/calendarEvent/CreateCalendarEventDTO.java">
+package ajudavcapi.domain.dto.calendarEvent;
+
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 
-public record UserRequestDTO(
-  
-    @NotBlank(message = "O nome é obrigatório")
-    String name,
+public record CreateCalendarEventDTO(
+    @NotBlank(message = "O título do evento é obrigatório")
+    @Schema(description = "Título do evento da agenda.")
+    String title,
+    @Schema(description = "Detalhes do evento ou instruções de cuidado.")
+    String description,
+    @NotNull(message = "A data e hora do evento são obrigatórias")
+    @FutureOrPresent(message = "A data do evento não pode estar no passado")
+    @Schema(description = "Data e hora local do evento, no formato ISO yyyy-MM-ddTHH:mm:ss.") LocalDateTime eventDateTime,
+    @NotNull(message = "A categoria do evento é obrigatória")
+    @Schema(description = "Categoria do evento, conforme os valores aceitos pela API.")
+    String eventCategory,
+    @Schema(description = "Se true, atribui o evento ao criador; false ou null deixa sem responsável.")
+    Boolean assignToCreator
+) {}
+</file>
 
-    @Email (message = "E-mail inválido")
-    @NotBlank(message = "O e-mail é obrigatório")
-    String email,
+<file path="src/main/java/ajudavcapi/domain/dto/groupmember/GroupMemberResponseDTO.java">
+package ajudavcapi.domain.dto.groupmember;
 
-    @NotBlank(message = "A senha é obrigatória")
-    @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
-     String password
-) {
-    
-}
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
+import ajudavcapi.domain.enums.GroupRole;
+
+@Schema(description = "Representação do membro e de suas permissões no grupo.")
+public record GroupMemberResponseDTO(
+    Long id,
+    Long userId,
+    String userName,
+    String userEmail,
+    GroupRole role,
+    LocalDateTime joinedAt,
+    boolean canEditRoutine,
+    boolean canEditProgress
+) {}
 </file>
 
 <file path="src/main/java/ajudavcapi/domain/dto/user/UserResponseDTO.java">
@@ -1487,39 +1364,6 @@ public record UserResponseDTO(
     }
 
 }
-</file>
-
-<file path="src/main/java/ajudavcapi/domain/dto/weeklyProgress/CreateWeeklyProgressDTO.java">
-package ajudavcapi.domain.dto.weeklyProgress;
-
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
-
-public record CreateWeeklyProgressDTO(
-    @NotNull(message = "A nota de comunicação é obrigatória")
-    @Min(value = 1, message = "A nota mínima é 1")
-    @Max(value = 10, message = "A nota máxima é 10")
-    Integer communicationScore,
-
-    @NotNull(message = "A nota de mobilidade é obrigatória")
-    @Min(value = 1, message = "A nota mínima é 1")
-    @Max(value = 10, message = "A nota máxima é 10")
-    Integer mobilityScore,
-
-    @NotNull(message = "A nota de memória é obrigatória")
-    @Min(value = 1, message = "A nota mínima é 1")
-    @Max(value = 10, message = "A nota máxima é 10")
-    Integer memoryScore,
-
-    Integer countAnimo,
-    Integer countFeliz,
-    Integer countApatia,
-    Integer countRaiva,
-    Integer countTriste,
-
-    String description
-) {}
 </file>
 
 <file path="src/main/java/ajudavcapi/domain/entity/CalendarEventEntity.java">
@@ -1733,381 +1577,6 @@ public enum StrokeType {
     ISQUEMICO,            // Isquêmico (entupimento de vaso)
     HEMORRAGICO,         // Hemorrágico (rompimento de vaso)
     ISQUEMICO_TRANSITORIO   // Isquêmico transitório (entupimento de vaso tempórario)
-}
-</file>
-
-<file path="src/main/java/ajudavcapi/service/CalendarEventService.java">
-package ajudavcapi.service;
-
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import ajudavcapi.domain.dto.calendarEvent.CalendarEventResponseDTO;
-import ajudavcapi.domain.dto.calendarEvent.CreateCalendarEventDTO;
-import ajudavcapi.domain.entity.CalendarEventEntity;
-import ajudavcapi.domain.entity.GroupEntity;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.repository.CalendarEventRepository;
-import ajudavcapi.domain.repository.GroupRepository;
-import ajudavcapi.domain.repository.GroupMemberRepository;
-import ajudavcapi.domain.entity.GroupMemberEntity;
-import ajudavcapi.domain.enums.GroupRole;
-import lombok.RequiredArgsConstructor;
-
-@Service
-@RequiredArgsConstructor
-public class CalendarEventService {
-
-    private final CalendarEventRepository calendarEventRepository;
-    private final GroupRepository groupRepository;
-    private final GroupMemberRepository groupMemberRepository;
-    private final ActivityLogService activityLogService;
-
-    @Transactional
-    public CalendarEventResponseDTO createEvent(CreateCalendarEventDTO dto, UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
-        requirePermission(group, userLogado, true);
-        CalendarEventEntity event = new CalendarEventEntity();
-        event.setTitle(dto.title().trim());
-        event.setDescription(dto.description());
-        event.setEventDateTime(dto.eventDateTime());
-        event.setEventCategory(dto.eventCategory().trim());
-        event.setCompleted(false);
-        event.setCreatedBy(userLogado);
-        event.setAssignedUser(Boolean.FALSE.equals(dto.assignToCreator()) ? null : userLogado);
-        event.setGroup(group);
-
-        CalendarEventEntity savedEvent = calendarEventRepository.save(event);
-        activityLogService.createSystemLog(
-                userLogado, group, "Atividade criada: " + savedEvent.getTitle(),
-                "A atividade " + savedEvent.getTitle() + " foi criada na agenda.",
-                "CREATE", "AUDIT");
-        return mapToDTO(savedEvent);
-    }
-
-    @Transactional(readOnly = true)
-    public List<CalendarEventResponseDTO> getGroupEvents(UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
-        return calendarEventRepository.findByGroupIdOrderByEventDateTimeAsc(group.getId())
-                .stream()
-                .map(this::mapToDTO)
-                .toList();
-    }
-
-    @Transactional
-    public CalendarEventResponseDTO assignEvent(Long eventId, UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
-        CalendarEventEntity event = calendarEventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado."));
-
-        if (event.getGroup() == null || !event.getGroup().getId().equals(group.getId())) {
-            throw new IllegalArgumentException("Acesso negado: esta atividade pertence a outro grupo.");
-        }
-        if (event.getAssignedUser() != null) {
-            throw new IllegalArgumentException("Esta atividade já possui um responsável.");
-        }
-
-        event.setAssignedUser(userLogado);
-        CalendarEventEntity updated = calendarEventRepository.save(event);
-        activityLogService.createSystemLog(
-                userLogado, group, "Tarefa assumida: " + event.getTitle(),
-                "O cuidador " + userLogado.getName() + " assumiu a atividade " + event.getTitle() + ".",
-                "ASSIGN", "AUDIT");
-        return mapToDTO(updated);
-    }
-
-    @Transactional
-    public CalendarEventResponseDTO toggleEventCompletion(Long eventId, UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
-        CalendarEventEntity event = calendarEventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado."));
-
-        if (event.getGroup() == null || !event.getGroup().getId().equals(group.getId())) {
-            throw new IllegalArgumentException("Acesso negado: este evento pertence a outro grupo.");
-        }
-
-        event.setCompleted(!event.isCompleted());
-        CalendarEventEntity updatedEvent = calendarEventRepository.save(event);
-        activityLogService.createSystemLog(
-                userLogado, group, "Status alterado: " + event.getTitle(),
-                "A atividade " + event.getTitle() + " foi marcada como " +
-                        (event.isCompleted() ? "concluída" : "pendente") + ".",
-                event.isCompleted() ? "COMPLETED" : "PENDING", "AUDIT");
-        return mapToDTO(updatedEvent);
-    }
-
-    @Transactional
-    public void deleteEvent(Long eventId, UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
-        requirePermission(group, userLogado, true);
-        CalendarEventEntity event = calendarEventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado."));
-
-        if (event.getGroup() == null || !event.getGroup().getId().equals(group.getId())) {
-            throw new IllegalArgumentException("Acesso negado: este evento pertence a outro grupo.");
-        }
-
-        activityLogService.createSystemLog(
-                userLogado, group, "Atividade excluída: " + event.getTitle(),
-                "A atividade " + event.getTitle() + " foi excluída da agenda.",
-                "DELETE", "AUDIT");
-        calendarEventRepository.delete(event);
-    }
-
-    private void requirePermission(GroupEntity group, UserEntity user, boolean routine) {
-        if (group.getLeader() != null && user.getId() != null
-                && group.getLeader().getId().equals(user.getId())) {
-            return;
-        }
-        GroupMemberEntity member = groupMemberRepository.findByGroupIdAndUserId(group.getId(), user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não pertence ao grupo."));
-        if (member.getRole() == GroupRole.LEADER) return;
-        boolean allowed = routine ? member.isCanEditRoutine() : member.isCanEditProgress();
-        if (!allowed) {
-            throw new IllegalArgumentException(routine
-                    ? "O líder não concedeu permissão para editar a rotina."
-                    : "O líder não concedeu permissão para editar o progresso.");
-        }
-    }
-
-    private GroupEntity getUserGroup(UserEntity user) {
-        if (user == null) {
-            throw new IllegalArgumentException("Usuário autenticado não encontrado.");
-        }
-        if (user.getGroup() != null) {
-            return user.getGroup();
-        }
-        return groupRepository.findByLeaderIdOrMembersUserId(user.getId(), user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
-    }
-
-    private CalendarEventResponseDTO mapToDTO(CalendarEventEntity entity) {
-        return new CalendarEventResponseDTO(
-                entity.getId(),
-                entity.getTitle(),
-                entity.getDescription(),
-                entity.getEventDateTime(),
-                entity.getEventCategory(),
-                entity.isCompleted(),
-                entity.getCreatedBy() != null ? entity.getCreatedBy().getName() : "Cuidador",
-                entity.getGroup() != null ? entity.getGroup().getId() : null,
-                entity.getAssignedUser() != null ? entity.getAssignedUser().getId() : null,
-                entity.getAssignedUser() != null ? entity.getAssignedUser().getName() : null);
-    }
-}
-</file>
-
-<file path="src/main/java/ajudavcapi/service/PatientService.java">
-package ajudavcapi.service;
-
-import java.util.Collections;
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import ajudavcapi.domain.dto.disease.DiseaseResponseDTO;
-import ajudavcapi.domain.dto.patient.CreatePatientDTO;
-import ajudavcapi.domain.dto.patient.PatientResponseDTO;
-import ajudavcapi.domain.dto.patient.UpdatePatientDTO;
-import ajudavcapi.domain.dto.stroke.StrokeResponseDTO;
-import ajudavcapi.domain.entity.DiseaseEntity;
-import ajudavcapi.domain.entity.GroupEntity;
-import ajudavcapi.domain.entity.PatientEntity;
-import ajudavcapi.domain.entity.StrokeEntity;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.repository.GroupRepository;
-import ajudavcapi.domain.repository.PatientRepository;
-
-@Service
-public class PatientService {
-
-    private final PatientRepository patientRepository;
-    private final GroupRepository groupRepository;
-
-    public PatientService(
-            PatientRepository patientRepository,
-            GroupRepository groupRepository) {
-
-        this.patientRepository = patientRepository;
-        this.groupRepository = groupRepository;
-    }
-
-    @Transactional
-    public PatientResponseDTO createPatient(
-            CreatePatientDTO dto,
-            UserEntity userLogado) {
-
-        GroupEntity group = findGroupByUser(userLogado);
-
-        if (group.getPatient() != null) {
-            throw new IllegalArgumentException(
-                "Este grupo já possui um paciente cadastrado."
-            );
-        }
-
-        PatientEntity patient = new PatientEntity();
-        patient.setName(dto.name());
-        patient.setBirthDate(dto.birthDate());
-        patient.setImportantDescription(dto.importantDescription());
-        patient.setGroup(group);
-
-        if (dto.strokes() != null) {
-            for (var strokeDTO : dto.strokes()) {
-                StrokeEntity stroke = new StrokeEntity();
-                stroke.setStrokeType(strokeDTO.strokeType());
-                stroke.setStrokeDate(strokeDTO.strokeDate());
-                stroke.setPatient(patient);
-
-                patient.getStrokes().add(stroke);
-            }
-        }
-
-        if (dto.diseases() != null) {
-            for (var diseaseType : dto.diseases()) {
-                DiseaseEntity disease = new DiseaseEntity();
-                disease.setType(diseaseType);
-                disease.setPatient(patient);
-
-                patient.getDiseases().add(disease);
-            }
-        }
-
-        PatientEntity savedPatient = patientRepository.saveAndFlush(patient);
-
-        group.setPatient(savedPatient);
-        groupRepository.save(group);
-
-        return mapToResponseDTO(
-            savedPatient,
-            group.getId()
-        );
-    }
-
-    @Transactional(readOnly = true)
-    public PatientResponseDTO getPatientByGroup(
-            UserEntity userLogado) {
-
-        GroupEntity group = findGroupByUser(userLogado);
-
-        PatientEntity patient = group.getPatient();
-
-        if (patient == null) {
-            throw new IllegalArgumentException(
-                "Nenhum paciente cadastrado para este grupo."
-            );
-        }
-
-        return mapToResponseDTO(
-            patient,
-            group.getId()
-        );
-    }
-
-    @Transactional
-    public PatientResponseDTO updatePatient(
-            Long id,
-            UpdatePatientDTO dto,
-            UserEntity userLogado) {
-
-        GroupEntity group = findGroupByUser(userLogado);
-
-        PatientEntity patient = patientRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                    "Paciente não encontrado com o ID fornecido."
-                ));
-
-        if (group.getPatient() == null || !group.getPatient().getId().equals(patient.getId())) {
-            throw new IllegalArgumentException(
-                "Você não tem permissão para alterar este paciente."
-            );
-        }
-
-        patient.setName(dto.name());
-        patient.setBirthDate(dto.birthDate());
-        patient.setImportantDescription(dto.importantDescription());
-
-        if (dto.strokes() != null) {
-            patient.getStrokes().clear();
-            for (var strokeDTO : dto.strokes()) {
-                StrokeEntity stroke = new StrokeEntity();
-                stroke.setStrokeType(strokeDTO.strokeType());
-                stroke.setStrokeDate(strokeDTO.strokeDate());
-                stroke.setPatient(patient);
-
-                patient.getStrokes().add(stroke);
-            }
-        }
-
-        if (dto.diseases() != null) {
-            patient.getDiseases().clear();
-            for (var diseaseType : dto.diseases()) {
-                DiseaseEntity disease = new DiseaseEntity();
-                disease.setType(diseaseType);
-                disease.setPatient(patient);
-
-                patient.getDiseases().add(disease);
-            }
-        }
-
-        PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
-
-        return mapToResponseDTO(
-            updatedPatient,
-            group.getId()
-        );
-    }
-
-    private GroupEntity findGroupByUser(UserEntity userLogado) {
-        if (userLogado.getGroup() != null) {
-            return userLogado.getGroup();
-        }
-
-        return groupRepository.findByLeader(userLogado)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                    "Usuário não está vinculado a um grupo."
-                ));
-    }
-
-    private PatientResponseDTO mapToResponseDTO(
-            PatientEntity patient,
-            Long groupId) {
-
-        List<StrokeResponseDTO> strokes = patient.getStrokes() == null 
-                ? Collections.emptyList() 
-                : patient.getStrokes()
-                    .stream()
-                    .map(stroke -> new StrokeResponseDTO(
-                        stroke.getId(),
-                        stroke.getStrokeType(),
-                        stroke.getStrokeDate()
-                    ))
-                    .toList();
-
-        List<DiseaseResponseDTO> diseases = patient.getDiseases() == null 
-                ? Collections.emptyList() 
-                : patient.getDiseases()
-                    .stream()
-                    .map(disease -> new DiseaseResponseDTO(
-                        disease.getId(),
-                        disease.getType()
-                    ))
-                    .toList();
-
-        return new PatientResponseDTO(
-            patient.getId(),
-            patient.getName(),
-            patient.getBirthDate(),
-            patient.getImportantDescription(),
-            strokes,
-            diseases,
-            groupId
-        );
-    }
 }
 </file>
 
@@ -2739,184 +2208,21 @@ try {
 Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
 </file>
 
-<file path="src/main/java/ajudavcapi/controller/ActivityLogController.java">
+<file path="src/main/java/ajudavcapi/controller/GroupController.java">
 package ajudavcapi.controller;
 
-import java.net.URI;
-import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.net.URI;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import ajudavcapi.domain.dto.activitylog.ActivityLogResponseDTO;
-import ajudavcapi.domain.dto.activitylog.CreateActivityLogDTO;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.ActivityLogService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor; 
-
-@RestController
-@RequestMapping("/activity-logs")
-@RequiredArgsConstructor 
-public class ActivityLogController {
-
-    private final ActivityLogService activityLogService;
-
-    @PostMapping
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<ActivityLogResponseDTO> createLog(
-            @RequestBody @Valid CreateActivityLogDTO dto,
-            @AuthenticationPrincipal UserEntity userLogado,
-            UriComponentsBuilder uriBuilder) {
-
-        ActivityLogResponseDTO response = activityLogService.createLog(dto, userLogado);
-
-        URI uri = uriBuilder.path("/activity-logs/{id}").buildAndExpand(response.id()).toUri();
-        return ResponseEntity.created(uri).body(response);
-    }
-
-    @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<List<ActivityLogResponseDTO>> getMyLogs(
-            @AuthenticationPrincipal UserEntity userLogado) {
-        return ResponseEntity.ok(activityLogService.getMyLogs(userLogado));
-    }
-
-    @GetMapping
-    public ResponseEntity<List<ActivityLogResponseDTO>> getGroupLogs(
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        List<ActivityLogResponseDTO> logs = activityLogService.getGroupLogs(userLogado);
-        return ResponseEntity.ok(logs);
-    }
-
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<ActivityLogResponseDTO> updateStatus(
-            @PathVariable Long id,
-            @RequestParam String status,
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        ActivityLogResponseDTO response = activityLogService.updateStatus(id, status, userLogado);
-        return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<Void> deleteLog(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        activityLogService.deleteLog(id, userLogado);
-        return ResponseEntity.noContent().build();
-    }
-}
-</file>
-
-<file path="src/main/java/ajudavcapi/controller/CalendarEventController.java">
-package ajudavcapi.controller;
-
-import java.net.URI;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import ajudavcapi.domain.dto.calendarEvent.CalendarEventResponseDTO;
-import ajudavcapi.domain.dto.calendarEvent.CreateCalendarEventDTO;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.CalendarEventService;
-import jakarta.validation.Valid;
-
-@RestController
-@RequestMapping("/calendar-events")
-public class CalendarEventController {
-
-    @Autowired
-    private CalendarEventService calendarEventService;
-
-    // Criar um evento na agenda do grupo
-    @PostMapping
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<CalendarEventResponseDTO> createEvent(
-            @RequestBody @Valid CreateCalendarEventDTO dto,
-            @AuthenticationPrincipal UserEntity userLogado,
-            UriComponentsBuilder uriBuilder) {
-
-        CalendarEventResponseDTO response = calendarEventService.createEvent(dto, userLogado);
-
-        URI uri = uriBuilder.path("/calendar-events/{id}").buildAndExpand(response.id()).toUri();
-        return ResponseEntity.created(uri).body(response);
-    }
-
-    // Listar todos os eventos da agenda do grupo do usuário
-    @GetMapping
-    public ResponseEntity<List<CalendarEventResponseDTO>> getGroupEvents(
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        List<CalendarEventResponseDTO> events = calendarEventService.getGroupEvents(userLogado);
-        return ResponseEntity.ok(events);
-    }
-
-    // Marcar/Desmarcar evento como concluído (ex: medicamento tomado)
-    @PatchMapping("/{id}/toggle")
-    public ResponseEntity<CalendarEventResponseDTO> toggleEventCompletion(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        CalendarEventResponseDTO response = calendarEventService.toggleEventCompletion(id, userLogado);
-        return ResponseEntity.ok(response);
-    }
-
-    @PatchMapping("/{id}/assign")
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
-    public ResponseEntity<CalendarEventResponseDTO> assignEvent(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserEntity userLogado) {
-        return ResponseEntity.ok(calendarEventService.assignEvent(id, userLogado));
-    }
-
-    // Deletar um evento (Somente o Líder)
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEvent(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserEntity userLogado) {
-
-        calendarEventService.deleteEvent(id, userLogado);
-        return ResponseEntity.noContent().build();
-    }
-}
-</file>
-
-<file path="src/main/java/ajudavcapi/controller/UserController.java">
-package ajudavcapi.controller;
-
-import java.net.URI;
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -2926,90 +2232,297 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import ajudavcapi.domain.dto.user.UserRequestDTO;
-import ajudavcapi.domain.dto.user.UserResponseDTO;
+import ajudavcapi.domain.dto.group.CreateGroupDTO;
+import ajudavcapi.domain.dto.group.GroupResponseDTO;
+import ajudavcapi.domain.dto.group.JoinGroupDTO;
+import ajudavcapi.domain.dto.group.UpdateGroupDTO;
 import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.UserService;
+import ajudavcapi.service.GroupService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/user")
-@RequiredArgsConstructor
-public class UserController {
+@Tag(name = "Grupos de Cuidado", description = "Criação, consulta, atualização e ingresso em grupos multi-tenant de cuidado.")
+@RequestMapping("/groups")
+public class GroupController {
 
-    private final UserService service;
+    private final GroupService groupService;
 
-    @GetMapping
-    public ResponseEntity<List<UserResponseDTO>> getTodos() {
-        List<UserResponseDTO> lista = service.listarUsuarios().stream()
-            .map(UserResponseDTO::new)
-            .toList();
-
-        return ResponseEntity.ok(lista);
+    public GroupController(GroupService groupService) {
+        this.groupService = groupService;
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> buscarPorId(@PathVariable Long id) {
-        UserEntity user = service.buscarPorId(id);
-        return ResponseEntity.ok(new UserResponseDTO(user));
-    }
-
+    /**
+     * Criar um novo Grupo de Cuidado.
+     */
+    @Operation(summary = "Criar grupo de cuidado", description = "Cria um grupo de cuidado associado ao usuário autenticado, que passa a ser seu líder.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso; confira o cabeçalho Location"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Grupo ou recurso relacionado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
+        })
     @PostMapping
-    public ResponseEntity<UserResponseDTO> cadastrar(@RequestBody @Valid UserRequestDTO dto, UriComponentsBuilder uriBuilder) {
-        UserEntity novoUsuario = service.adicionarUsuario(dto);
-        
-        URI uri = uriBuilder.path("/user/{id}").buildAndExpand(novoUsuario.getId()).toUri();
-        return ResponseEntity.created(uri).body(new UserResponseDTO(novoUsuario));
+    public ResponseEntity<GroupResponseDTO> createGroup(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para CreateGroupDTO", required = true) @RequestBody @Valid CreateGroupDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado,
+            UriComponentsBuilder uriBuilder) {
+
+        GroupResponseDTO response = groupService.createGroup(dto, userLogado);
+
+        URI uri = uriBuilder.path("/groups/{id}").buildAndExpand(response.id()).toUri();
+        return ResponseEntity.created(uri).body(response);
     }
 
+    /**
+     * Atualizar dados do Grupo (e do Paciente associado).
+     */
+    @Operation(summary = "Atualizar grupo de cuidado", description = "Atualiza dados do grupo. O serviço deve validar que o usuário tem autoridade sobre o grupo informado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recurso atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> atualizar(@PathVariable Long id, @RequestBody @Valid UserRequestDTO dto) {
-        UserEntity usuarioAtualizado = service.atualizarUsuario(id, dto);
-        return ResponseEntity.ok(new UserResponseDTO(usuarioAtualizado));
+    public ResponseEntity<GroupResponseDTO> updateGroup(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UpdateGroupDTO", required = true) @RequestBody @Valid UpdateGroupDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupResponseDTO response = groupService.updateGroup(id, dto, userLogado);
+        return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        service.deletarUsuario(id);
-        return ResponseEntity.noContent().build();
+    /**
+     * Entrar em um grupo existente informando o código de convite.
+     */
+    @Operation(summary = "Ingressar em grupo", description = "Ingressa no grupo usando o código de convite, sujeito às regras de pertencimento e duplicidade.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @PostMapping("/join")
+    public ResponseEntity<GroupResponseDTO> joinGroup(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para JoinGroupDTO", required = true) @RequestBody @Valid JoinGroupDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupResponseDTO response = groupService.joinGroup(dto, userLogado);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Consultar informações do grupo do usuário logado.
+     */
+    @Operation(summary = "Consultar meu grupo", description = "Retorna o grupo de cuidado associado ao usuário autenticado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @GetMapping("/me")
+    public ResponseEntity<GroupResponseDTO> getMyGroup(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupResponseDTO response = groupService.getMyGroup(userLogado);
+        
+        if (response == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Consultar grupo por ID.
+     */
+    @Operation(summary = "Consultar grupo por ID", description = "Consulta um grupo somente se o usuário tiver acesso permitido a esse tenant.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @GetMapping("/{id}")
+    public ResponseEntity<GroupResponseDTO> getGroupById(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupResponseDTO response = groupService.getGroupById(id, userLogado);
+        return ResponseEntity.ok(response);
     }
 }
 </file>
 
-<file path="src/main/java/ajudavcapi/domain/dto/auth/AuthenticationDTO.java">
-package ajudavcapi.domain.dto.auth;
+<file path="src/main/java/ajudavcapi/controller/MonthlySummaryController.java">
+package ajudavcapi.controller;
 
-import jakarta.validation.constraints.NotBlank;
 
-public record AuthenticationDTO(
-    @NotBlank String email,
-    @NotBlank String password
-) {}
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import ajudavcapi.domain.dto.monthlySummary.MonthlySummaryResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.MonthlySummaryService;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@Tag(name = "Resumos Mensais", description = "Indicadores agregados mensais do grupo de cuidado.")
+@RequestMapping("/monthly-summaries")
+@RequiredArgsConstructor
+public class MonthlySummaryController {
+
+    private final MonthlySummaryService monthlySummaryService;
+
+    // Retorna o resumo consolidado do mês (calculado em tempo real com base nos registros do mês)
+    @Operation(summary = "Consultar resumo mensal", description = "Calcula ou retorna o resumo do grupo para o mês e ano informados.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @GetMapping("/filter")
+    public ResponseEntity<MonthlySummaryResponseDTO> getSummaryByMonthAndYear(
+            @Parameter(description = "Mês do resumo, de 1 a 12", example = "10") @RequestParam Integer month,
+            @Parameter(description = "Ano do resumo no formato YYYY", example = "2026") @RequestParam Integer year,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        MonthlySummaryResponseDTO response = monthlySummaryService.getOrCalculateSummary(month, year, userLogado);
+        return ResponseEntity.ok(response);
+    }
+
+    // Histórico de todos os resumos do grupo
+    @GetMapping
+    public ResponseEntity<List<MonthlySummaryResponseDTO>> getGroupSummaries(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        List<MonthlySummaryResponseDTO> summaries = monthlySummaryService.getGroupSummaries(userLogado);
+        return ResponseEntity.ok(summaries);
+    }
+}
 </file>
 
-<file path="src/main/java/ajudavcapi/domain/dto/weeklyProgress/WeeklyProgressResponseDTO.java">
+<file path="src/main/java/ajudavcapi/domain/dto/group/CreateGroupDTO.java">
+package ajudavcapi.domain.dto.group;
+
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import ajudavcapi.domain.dto.patient.CreatePatientDTO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+
+public record CreateGroupDTO(
+
+    @NotBlank(message = "O nome do grupo é obrigatório.")
+    @Schema(description = "Nome do grupo de cuidado.")
+    String name,
+
+    @Valid
+    @Schema(description = "Dados opcionais do paciente associados ao grupo.") CreatePatientDTO patient
+
+) {
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/user/UserRequestDTO.java">
+package ajudavcapi.domain.dto.user;
+
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record UserRequestDTO(
+  
+    @NotBlank(message = "O nome é obrigatório")
+    @Schema(description = "Nome completo do usuário.")
+    String name,
+
+    @Email (message = "E-mail inválido")
+    @NotBlank(message = "O e-mail é obrigatório")
+    @Schema(description = "E-mail válido e único da conta.")
+    String email,
+
+    @NotBlank(message = "A senha é obrigatória")
+    @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
+     @Schema(description = "Senha da conta com no mínimo 6 caracteres.")
+     String password
+) {
+    
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/weeklyProgress/CreateWeeklyProgressDTO.java">
 package ajudavcapi.domain.dto.weeklyProgress;
 
-import java.time.LocalDateTime;
 
-public record WeeklyProgressResponseDTO(
-    Long id,
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
+public record CreateWeeklyProgressDTO(
+    @NotNull(message = "A nota de comunicação é obrigatória")
+    @Min(value = 1, message = "A nota mínima é 1")
+    @Max(value = 10, message = "A nota máxima é 10")
+    @Schema(description = "Pontuação de comunicação de 1 a 10.")
     Integer communicationScore,
+
+    @NotNull(message = "A nota de mobilidade é obrigatória")
+    @Min(value = 1, message = "A nota mínima é 1")
+    @Max(value = 10, message = "A nota máxima é 10")
+    @Schema(description = "Pontuação de mobilidade de 1 a 10.")
     Integer mobilityScore,
+
+    @NotNull(message = "A nota de memória é obrigatória")
+    @Min(value = 1, message = "A nota mínima é 1")
+    @Max(value = 10, message = "A nota máxima é 10")
+    @Schema(description = "Pontuação de memória de 1 a 10.")
     Integer memoryScore,
+
+    @Schema(description = "Contagem/nota registrada para o humor ânimo, conforme regra de negócio.")
+
     Integer countAnimo,
+    @Schema(description = "Contagem/nota registrada para o humor feliz.")
     Integer countFeliz,
+    @Schema(description = "Contagem/nota registrada para o humor apatia.")
     Integer countApatia,
+    @Schema(description = "Contagem/nota registrada para o humor raiva.")
     Integer countRaiva,
+    @Schema(description = "Contagem/nota registrada para o humor triste.")
     Integer countTriste,
-    String description,
-    Integer weekOfMonth,
-    LocalDateTime createdAt,
-    String authorName,
-    Long groupId,
-    Integer plannedActivities,
-    Integer completedActivities
+
+    @Schema(description = "Observações sobre a evolução semanal.")
+
+    String description
 ) {}
 </file>
 
@@ -3419,6 +2932,169 @@ public class AuthorizationService implements UserDetailsService {
 }
 </file>
 
+<file path="src/main/java/ajudavcapi/service/CalendarEventService.java">
+package ajudavcapi.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.dto.calendarEvent.CreateCalendarEventDTO;
+import ajudavcapi.domain.dto.calendarEvent.CalendarEventResponseDTO;
+import ajudavcapi.domain.entity.CalendarEventEntity;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.repository.CalendarEventRepository;
+import ajudavcapi.domain.repository.GroupRepository;
+import ajudavcapi.domain.repository.GroupMemberRepository;
+import ajudavcapi.domain.entity.GroupMemberEntity;
+import ajudavcapi.domain.enums.GroupRole;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class CalendarEventService {
+
+    private final CalendarEventRepository calendarEventRepository;
+    private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
+    private final ActivityLogService activityLogService;
+
+    @Transactional
+    public CalendarEventResponseDTO createEvent(CreateCalendarEventDTO dto, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+        requirePermission(group, userLogado, true);
+        CalendarEventEntity event = new CalendarEventEntity();
+        event.setTitle(dto.title().trim());
+        event.setDescription(dto.description());
+        event.setEventDateTime(dto.eventDateTime());
+        event.setEventCategory(dto.eventCategory().trim());
+        event.setCompleted(false);
+        event.setCreatedBy(userLogado);
+        event.setAssignedUser(Boolean.FALSE.equals(dto.assignToCreator()) ? null : userLogado);
+        event.setGroup(group);
+
+        CalendarEventEntity savedEvent = calendarEventRepository.save(event);
+        activityLogService.createSystemLog(
+                userLogado, group, "Atividade criada: " + savedEvent.getTitle(),
+                "A atividade " + savedEvent.getTitle() + " foi criada na agenda.",
+                "CREATE", "AUDIT");
+        return mapToDTO(savedEvent);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CalendarEventResponseDTO> getGroupEvents(UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+        return calendarEventRepository.findByGroupIdOrderByEventDateTimeAsc(group.getId())
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    @Transactional
+    public CalendarEventResponseDTO assignEvent(Long eventId, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+        CalendarEventEntity event = calendarEventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado."));
+
+        if (event.getGroup() == null || !event.getGroup().getId().equals(group.getId())) {
+            throw new IllegalArgumentException("Acesso negado: esta atividade pertence a outro grupo.");
+        }
+        if (event.getAssignedUser() != null) {
+            throw new IllegalArgumentException("Esta atividade já possui um responsável.");
+        }
+
+        event.setAssignedUser(userLogado);
+        CalendarEventEntity updated = calendarEventRepository.save(event);
+        activityLogService.createSystemLog(
+                userLogado, group, "Tarefa assumida: " + event.getTitle(),
+                "O cuidador " + userLogado.getName() + " assumiu a atividade " + event.getTitle() + ".",
+                "ASSIGN", "AUDIT");
+        return mapToDTO(updated);
+    }
+
+    @Transactional
+    public CalendarEventResponseDTO toggleEventCompletion(Long eventId, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+        CalendarEventEntity event = calendarEventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado."));
+
+        if (event.getGroup() == null || !event.getGroup().getId().equals(group.getId())) {
+            throw new IllegalArgumentException("Acesso negado: este evento pertence a outro grupo.");
+        }
+
+        event.setCompleted(!event.isCompleted());
+        CalendarEventEntity updatedEvent = calendarEventRepository.save(event);
+        activityLogService.createSystemLog(
+                userLogado, group, "Status alterado: " + event.getTitle(),
+                "A atividade " + event.getTitle() + " foi marcada como " +
+                        (event.isCompleted() ? "concluída" : "pendente") + ".",
+                event.isCompleted() ? "COMPLETED" : "PENDING", "AUDIT");
+        return mapToDTO(updatedEvent);
+    }
+
+    @Transactional
+    public void deleteEvent(Long eventId, UserEntity userLogado) {
+        GroupEntity group = getUserGroup(userLogado);
+        requirePermission(group, userLogado, true);
+        CalendarEventEntity event = calendarEventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado."));
+
+        if (event.getGroup() == null || !event.getGroup().getId().equals(group.getId())) {
+            throw new IllegalArgumentException("Acesso negado: este evento pertence a outro grupo.");
+        }
+
+        activityLogService.createSystemLog(
+                userLogado, group, "Atividade excluída: " + event.getTitle(),
+                "A atividade " + event.getTitle() + " foi excluída da agenda.",
+                "DELETE", "AUDIT");
+        calendarEventRepository.delete(event);
+    }
+
+    private void requirePermission(GroupEntity group, UserEntity user, boolean routine) {
+        if (group.getLeader() != null && user.getId() != null
+                && group.getLeader().getId().equals(user.getId())) {
+            return;
+        }
+        GroupMemberEntity member = groupMemberRepository.findByGroupIdAndUserId(group.getId(), user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não pertence ao grupo."));
+        if (member.getRole() == GroupRole.LEADER) return;
+        boolean allowed = routine ? member.isCanEditRoutine() : member.isCanEditProgress();
+        if (!allowed) {
+            throw new IllegalArgumentException(routine
+                    ? "O líder não concedeu permissão para editar a rotina."
+                    : "O líder não concedeu permissão para editar o progresso.");
+        }
+    }
+
+    private GroupEntity getUserGroup(UserEntity user) {
+        if (user == null) {
+            throw new IllegalArgumentException("Usuário autenticado não encontrado.");
+        }
+        if (user.getGroup() != null) {
+            return user.getGroup();
+        }
+        return groupRepository.findByLeaderIdOrMembersUserId(user.getId(), user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não possui nenhum grupo associado."));
+    }
+
+    private CalendarEventResponseDTO mapToDTO(CalendarEventEntity entity) {
+        return new CalendarEventResponseDTO(
+                entity.getId(),
+                entity.getTitle(),
+                entity.getDescription(),
+                entity.getEventDateTime(),
+                entity.getEventCategory(),
+                entity.isCompleted(),
+                entity.getCreatedBy() != null ? entity.getCreatedBy().getName() : "Cuidador",
+                entity.getGroup() != null ? entity.getGroup().getId() : null,
+                entity.getAssignedUser() != null ? entity.getAssignedUser().getId() : null,
+                entity.getAssignedUser() != null ? entity.getAssignedUser().getName() : null);
+    }
+}
+</file>
+
 <file path="src/main/java/ajudavcapi/service/GroupMemberService.java">
 package ajudavcapi.service;
 
@@ -3587,107 +3263,531 @@ public class GroupMemberService {
 }
 </file>
 
-<file path="src/main/java/ajudavcapi/controller/GroupMemberController.java">
+<file path="src/main/java/ajudavcapi/controller/ActivityLogController.java">
 package ajudavcapi.controller;
 
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import ajudavcapi.domain.dto.groupmember.GroupMemberResponseDTO;
-import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberRoleDTO;
-import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberPermissionsDTO;
+import ajudavcapi.domain.dto.activitylog.ActivityLogResponseDTO;
+import ajudavcapi.domain.dto.activitylog.CreateActivityLogDTO;
 import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.GroupMemberService;
+import ajudavcapi.service.ActivityLogService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor; 
 
 @RestController
-@RequestMapping("/group-members")
-public class GroupMemberController {
+@Tag(name = "Atividades e Diário", description = "Registros de atividades, histórico e auditoria acessíveis no grupo.")
+@RequestMapping("/activity-logs")
+@RequiredArgsConstructor 
+public class ActivityLogController {
 
-    private final GroupMemberService groupMemberService;
+    private final ActivityLogService activityLogService;
 
-    // Injeção via Construtor explícita
-    public GroupMemberController(GroupMemberService groupMemberService) {
-        this.groupMemberService = groupMemberService;
+    @Operation(summary = "Criar registro no diário", description = "Cria um registro de atividade no contexto do grupo do usuário autenticado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso; confira o cabeçalho Location"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Grupo ou recurso relacionado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
+        })
+    @PostMapping
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<ActivityLogResponseDTO> createLog(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para CreateActivityLogDTO", required = true) @RequestBody @Valid CreateActivityLogDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado,
+            UriComponentsBuilder uriBuilder) {
+
+        ActivityLogResponseDTO response = activityLogService.createLog(dto, userLogado);
+
+        URI uri = uriBuilder.path("/activity-logs/{id}").buildAndExpand(response.id()).toUri();
+        return ResponseEntity.created(uri).body(response);
+    }
+
+    @Operation(summary = "Consultar meus registros de auditoria", description = "Retorna os registros associados ao usuário autenticado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<List<ActivityLogResponseDTO>> getMyLogs(
+            @AuthenticationPrincipal UserEntity userLogado) {
+        return ResponseEntity.ok(activityLogService.getMyLogs(userLogado));
     }
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GroupMemberResponseDTO>> getGroupMembers(
+    public ResponseEntity<List<ActivityLogResponseDTO>> getGroupLogs(
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        List<GroupMemberResponseDTO> members = groupMemberService.getGroupMembers(userLogado);
-        return ResponseEntity.ok(members);
+        List<ActivityLogResponseDTO> logs = activityLogService.getGroupLogs(userLogado);
+        return ResponseEntity.ok(logs);
     }
 
-    @PutMapping("/{id}/role")
-    public ResponseEntity<GroupMemberResponseDTO> updateMemberRole(
-            @PathVariable Long id,
-            @RequestBody @Valid UpdateGroupMemberRoleDTO dto,
+    @Operation(summary = "Atualizar status do registro", description = "Atualiza o status de um registro permitido pelo serviço; registros de auditoria podem ser imutáveis.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recurso atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ActivityLogResponseDTO> updateStatus(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
+            @Parameter(description = "Novo status permitido pelo domínio", example = "COMPLETED") @RequestParam String status,
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        GroupMemberResponseDTO response = groupMemberService.updateMemberRole(id, dto, userLogado);
+        ActivityLogResponseDTO response = activityLogService.updateStatus(id, status, userLogado);
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{id}/permissions")
-    public ResponseEntity<GroupMemberResponseDTO> updateMemberPermissions(
-            @PathVariable Long id,
-            @RequestBody @Valid UpdateGroupMemberPermissionsDTO dto,
-            @AuthenticationPrincipal UserEntity userLogado) {
-        return ResponseEntity.ok(groupMemberService.updateMemberPermissions(id, dto, userLogado));
-    }
-
+    @Operation(summary = "Excluir registro do diário", description = "Exclui registro conforme regras de autoria, grupo e imutabilidade de auditoria.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Recurso excluído sem corpo de resposta"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para excluir o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Exclusão conflita com regra de negócio")
+        })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> removeMember(
-            @PathVariable Long id,
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<Void> deleteLog(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
             @AuthenticationPrincipal UserEntity userLogado) {
 
-        groupMemberService.removeMember(id, userLogado);
+        activityLogService.deleteLog(id, userLogado);
         return ResponseEntity.noContent().build();
     }
 }
 </file>
 
-<file path="src/main/java/ajudavcapi/domain/dto/patient/CreatePatientDTO.java">
-package ajudavcapi.domain.dto.patient;
+<file path="src/main/java/ajudavcapi/controller/CalendarEventController.java">
+package ajudavcapi.controller;
 
-import java.time.LocalDate;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.net.URI;
 import java.util.List;
 
-import ajudavcapi.domain.dto.stroke.CreateStrokeDTO;
-import ajudavcapi.domain.enums.DiseaseType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import ajudavcapi.domain.dto.calendarEvent.CalendarEventResponseDTO;
+import ajudavcapi.domain.dto.calendarEvent.CreateCalendarEventDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.CalendarEventService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
 
-public record CreatePatientDTO(
-    @NotBlank(message = "O nome do paciente é obrigatório")
-    String name,
+@RestController
+@Tag(name = "Agenda e Calendário", description = "Atividades e eventos de cuidado, atribuição e conclusão.")
+@RequestMapping("/calendar-events")
+public class CalendarEventController {
 
-    @NotNull(message = "A data de nascimento é obrigatória")
-    @PastOrPresent(message = "A data de nascimento não pode ser uma data futura")
-    LocalDate birthDate,
+    @Autowired
+    private CalendarEventService calendarEventService;
 
-    String importantDescription,
+    // Criar um evento na agenda do grupo
+    @Operation(summary = "Criar evento de agenda", description = "Cria um evento para o grupo. O evento pode ficar sem responsável ou ser atribuído ao criador.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso; confira o cabeçalho Location"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Grupo ou recurso relacionado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
+        })
+    @PostMapping
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<CalendarEventResponseDTO> createEvent(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para CreateCalendarEventDTO", required = true) @RequestBody @Valid CreateCalendarEventDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado,
+            UriComponentsBuilder uriBuilder) {
 
-    @Valid
-    List<CreateStrokeDTO> strokes,
+        CalendarEventResponseDTO response = calendarEventService.createEvent(dto, userLogado);
 
-    List<DiseaseType> diseases
-) {
+        URI uri = uriBuilder.path("/calendar-events/{id}").buildAndExpand(response.id()).toUri();
+        return ResponseEntity.created(uri).body(response);
+    }
+
+    // Listar todos os eventos da agenda do grupo do usuário
+    @Operation(summary = "Listar agenda do grupo", description = "Lista eventos da agenda do grupo do usuário autenticado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @GetMapping
+    public ResponseEntity<List<CalendarEventResponseDTO>> getGroupEvents(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        List<CalendarEventResponseDTO> events = calendarEventService.getGroupEvents(userLogado);
+        return ResponseEntity.ok(events);
+    }
+
+    // Marcar/Desmarcar evento como concluído (ex: medicamento tomado)
+    @Operation(summary = "Alternar conclusão do evento", description = "Marca ou desmarca o evento como concluído, se o evento pertencer ao grupo acessível.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recurso atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @PatchMapping("/{id}/toggle")
+    public ResponseEntity<CalendarEventResponseDTO> toggleEventCompletion(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        CalendarEventResponseDTO response = calendarEventService.toggleEventCompletion(id, userLogado);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Assumir evento sem responsável", description = "Atribui o evento ao usuário autenticado quando ainda não há responsável e as regras do serviço permitem.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recurso atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @PatchMapping("/{id}/assign")
+    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    public ResponseEntity<CalendarEventResponseDTO> assignEvent(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+        return ResponseEntity.ok(calendarEventService.assignEvent(id, userLogado));
+    }
+
+    // Deletar um evento (Somente o Líder)
+    @Operation(summary = "Excluir evento", description = "Exclui evento conforme permissões de edição da rotina e regras do grupo; a autorização é validada no serviço.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Recurso excluído sem corpo de resposta"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para excluir o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Exclusão conflita com regra de negócio")
+        })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEvent(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        calendarEventService.deleteEvent(id, userLogado);
+        return ResponseEntity.noContent().build();
+    }
 }
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/PatientController.java">
+package ajudavcapi.controller;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.net.URI;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import ajudavcapi.domain.dto.patient.CreatePatientDTO;
+import ajudavcapi.domain.dto.patient.PatientResponseDTO;
+import ajudavcapi.domain.dto.patient.UpdatePatientDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.PatientService;
+import jakarta.validation.Valid;
+
+@RestController
+@Tag(name = "Pacientes", description = "Cadastro e consulta de informações do paciente vinculado ao grupo.")
+@RequestMapping("/patients")
+public class PatientController {
+
+    private final PatientService patientService;
+
+    public PatientController(PatientService patientService) {
+        this.patientService = patientService;
+    }
+
+    @Operation(summary = "Cadastrar paciente", description = "Cria o paciente do grupo.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão"),
+            @ApiResponse(responseCode = "404", description = "Grupo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito ou duplicidade")
+        })
+    @PostMapping
+    public ResponseEntity<PatientResponseDTO> createPatient(
+            @RequestBody @Valid CreatePatientDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado,
+            UriComponentsBuilder uriBuilder) {
+
+        PatientResponseDTO response = patientService.createPatient(dto, userLogado);
+
+        URI uri = uriBuilder
+                .path("/patients/{id}")
+                .buildAndExpand(response.id())
+                .toUri();
+
+        return ResponseEntity.created(uri).body(response);
+    }
+
+    @Operation(summary = "Consultar paciente do grupo", description = "Retorna o paciente vinculado ao grupo do usuário autenticado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado")
+        })
+    @GetMapping("/me")
+    public ResponseEntity<PatientResponseDTO> getMyPatient(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        PatientResponseDTO response = patientService.getPatientByGroup(userLogado);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Atualizar paciente", description = "Atualiza dados do paciente, após validar vínculo no grupo.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recurso atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão"),
+            @ApiResponse(responseCode = "404", description = "Não encontrado")
+        })
+    @PutMapping("/{id}")
+    public ResponseEntity<PatientResponseDTO> updatePatient(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdatePatientDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        PatientResponseDTO response = patientService.updatePatient(id, dto, userLogado);
+
+        return ResponseEntity.ok(response);
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/controller/UserController.java">
+package ajudavcapi.controller;
+
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.net.URI;
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import ajudavcapi.domain.dto.user.UserRequestDTO;
+import ajudavcapi.domain.dto.user.UserResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@Tag(name = "Gestão de Usuários", description = "Operações administrativas de cadastro e manutenção de usuários.")
+@RequestMapping("/user")
+@RequiredArgsConstructor
+public class UserController {
+
+    private final UserService service;
+
+    @Operation(summary = "Listar usuários", description = "Lista usuários. Atenção: a implementação atual não mostra restrição explícita por usuário/grupo; proteja este endpoint conforme o modelo de privacidade esperado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @GetMapping
+    public ResponseEntity<List<UserResponseDTO>> getTodos() {
+        List<UserResponseDTO> lista = service.listarUsuarios().stream()
+            .map(UserResponseDTO::new)
+            .toList();
+
+        return ResponseEntity.ok(lista);
+    }
+
+    @Operation(summary = "Consultar usuário por ID", description = "Retorna dados do usuário informado. Restringir acesso conforme política de privacidade.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> buscarPorId(@Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id) {
+        UserEntity user = service.buscarPorId(id);
+        return ResponseEntity.ok(new UserResponseDTO(user));
+    }
+
+    @Operation(summary = "Cadastrar usuário", description = "Cria um usuário e retorna a representação criada.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso; confira o cabeçalho Location"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Grupo ou recurso relacionado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
+        })
+    @PostMapping
+    public ResponseEntity<UserResponseDTO> cadastrar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UserRequestDTO", required = true) @RequestBody @Valid UserRequestDTO dto, UriComponentsBuilder uriBuilder) {
+        UserEntity novoUsuario = service.adicionarUsuario(dto);
+        
+        URI uri = uriBuilder.path("/user/{id}").buildAndExpand(novoUsuario.getId()).toUri();
+        return ResponseEntity.created(uri).body(new UserResponseDTO(novoUsuario));
+    }
+
+    @Operation(summary = "Atualizar usuário", description = "Atualiza o usuário informado. Recomenda-se validar se o usuário autenticado pode alterar esse ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recurso atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> atualizar(@Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id, @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UserRequestDTO", required = true) @RequestBody @Valid UserRequestDTO dto) {
+        UserEntity usuarioAtualizado = service.atualizarUsuario(id, dto);
+        return ResponseEntity.ok(new UserResponseDTO(usuarioAtualizado));
+    }
+
+    @Operation(summary = "Excluir usuário", description = "Exclui o usuário informado. Recomenda-se restringir a operação ao próprio usuário ou a administrador autorizado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Recurso excluído sem corpo de resposta"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para excluir o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Exclusão conflita com regra de negócio")
+        })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id) {
+        service.deletarUsuario(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/auth/AuthenticationDTO.java">
+package ajudavcapi.domain.dto.auth;
+
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+
+public record AuthenticationDTO(
+    @NotBlank @Schema(description = "E-mail cadastrado usado para autenticação.") String email,
+    @NotBlank @Schema(description = "Senha da conta. Nunca compartilhe este valor.") String password
+) {}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/weeklyProgress/WeeklyProgressResponseDTO.java">
+package ajudavcapi.domain.dto.weeklyProgress;
+
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
+
+@Schema(description = "Registro de evolução semanal com pontuações e métricas de atividades.")
+public record WeeklyProgressResponseDTO(
+    Long id,
+    Integer communicationScore,
+    Integer mobilityScore,
+    Integer memoryScore,
+    Integer countAnimo,
+    Integer countFeliz,
+    Integer countApatia,
+    Integer countRaiva,
+    Integer countTriste,
+    String description,
+    Integer weekOfMonth,
+    LocalDateTime createdAt,
+    String authorName,
+    Long groupId,
+    Integer plannedActivities,
+    Integer completedActivities
+) {}
 </file>
 
 <file path="src/main/java/ajudavcapi/domain/entity/PatientEntity.java">
@@ -3703,6 +3803,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -3739,19 +3840,20 @@ public class PatientEntity {
     private String importantDescription;
 
     @OneToMany(
-        mappedBy = "patient",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
-    private List<StrokeEntity> strokes = new ArrayList<>();
+            mappedBy = "patient",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER 
+        )
+        private List<StrokeEntity> strokes = new ArrayList<>();
 
-    @OneToMany(
-        mappedBy = "patient",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
-    private List<DiseaseEntity> diseases = new ArrayList<>();
-
+        @OneToMany(
+            mappedBy = "patient",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER
+        )
+        private List<DiseaseEntity> diseases = new ArrayList<>();
     @JsonIgnore
     @OneToOne(mappedBy = "patient")
     private GroupEntity group;
@@ -3888,25 +3990,6 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLogEntity, 
 }
 </file>
 
-<file path="src/main/java/ajudavcapi/domain/repository/GroupRepository.java">
-package ajudavcapi.domain.repository;
-
-import java.util.List;
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import ajudavcapi.domain.entity.GroupEntity;
-import ajudavcapi.domain.entity.UserEntity;
-
-
-public interface GroupRepository extends JpaRepository<GroupEntity, Long> {
-    List<GroupEntity> findByLeader(UserEntity leader);
-    Optional<GroupEntity> findByInviteCode(String inviteCode);
-    boolean existsByInviteCode(String inviteCode);
-    Optional<GroupEntity> findByLeaderIdOrMembersUserId(Long leaderId, Long userId);
-
-}
-</file>
-
 <file path="src/main/java/ajudavcapi/domain/repository/WeeklyProgressRepository.java">
 package ajudavcapi.domain.repository;
 
@@ -3928,264 +4011,6 @@ public interface WeeklyProgressRepository extends JpaRepository<WeeklyProgressEn
 
     @Query("SELECT w FROM WeeklyProgressEntity w WHERE w.group.id = :groupId AND MONTH(w.createdAt) = :month AND YEAR(w.createdAt) = :year ORDER BY w.createdAt ASC")
     List<WeeklyProgressEntity> findByGroupIdAndMonthAndYear(@Param("groupId") Long groupId, @Param("month") Integer month, @Param("year") Integer year);
-}
-</file>
-
-<file path="src/main/java/ajudavcapi/service/GroupService.java">
-package ajudavcapi.service;
-
-import java.security.SecureRandom;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import ajudavcapi.domain.dto.group.CreateGroupDTO;
-import ajudavcapi.domain.dto.group.GroupResponseDTO;
-import ajudavcapi.domain.dto.group.JoinGroupDTO;
-import ajudavcapi.domain.dto.group.UpdateGroupDTO;
-import ajudavcapi.domain.entity.GroupEntity;
-import ajudavcapi.domain.entity.GroupMemberEntity;
-import ajudavcapi.domain.entity.PatientEntity;
-import ajudavcapi.domain.entity.StrokeEntity;
-import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.enums.GroupRole;
-import ajudavcapi.domain.repository.GroupRepository;
-
-@Service
-public class GroupService {
-
-    private final GroupRepository groupRepository;
-
-    private static final String CHARACTERS =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-    private static final SecureRandom RANDOM =
-            new SecureRandom();
-
-    public GroupService(GroupRepository groupRepository) {
-        this.groupRepository = groupRepository;
-    }
-
-    @Transactional
-    public GroupResponseDTO createGroup(
-            CreateGroupDTO dto,
-            UserEntity leader) {
-
-        GroupEntity group = new GroupEntity();
-
-        group.setName(dto.name());
-        group.setLeader(leader);
-        group.setInviteCode(generateInviteCode());
-
-        if (dto.patient() != null) {
-
-            PatientEntity patient = new PatientEntity();
-
-            patient.setName(dto.patient().name().trim());
-            patient.setBirthDate(dto.patient().birthDate());
-            patient.setImportantDescription(
-                    dto.patient().importantDescription()
-            );
-
-            if (dto.patient().strokes() != null) {
-
-                for (ajudavcapi.domain.dto.stroke.CreateStrokeDTO strokeDTO
-                        : dto.patient().strokes()) {
-
-                    StrokeEntity stroke = new StrokeEntity();
-
-                    stroke.setStrokeType(
-                            strokeDTO.strokeType()
-                    );
-
-                    stroke.setStrokeDate(
-                            strokeDTO.strokeDate()
-                    );
-
-                    stroke.setPatient(patient);
-
-                    patient.getStrokes().add(stroke);
-                }
-            }
-
-            patient.setGroup(group);
-            group.setPatient(patient);
-        }
-
-        GroupMemberEntity leaderMember =
-                new GroupMemberEntity();
-
-        leaderMember.setUser(leader);
-        leaderMember.setRole(GroupRole.LEADER);
-
-        group.addMember(leaderMember);
-
-        GroupEntity savedGroup =
-                groupRepository.save(group);
-
-        return new GroupResponseDTO(savedGroup);
-    }
-
-    @Transactional
-    public GroupResponseDTO updateGroup(
-            Long id,
-            UpdateGroupDTO dto,
-            UserEntity user) {
-
-        GroupEntity group = groupRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(
-                        "Grupo não encontrado para o ID especificado."
-                ));
-
-        boolean isMemberOrLeader = group.getLeader().getId().equals(user.getId())
-                || group.getMembers().stream()
-                        .anyMatch(m -> m.getUser().getId().equals(user.getId()));
-
-        if (!isMemberOrLeader) {
-            throw new RuntimeException(
-                    "Acesso negado: você não tem permissão para alterar este grupo."
-            );
-        }
-
-        group.setName(dto.name());
-
-        if (dto.patient() != null && group.getPatient() != null) {
-            PatientEntity patient = group.getPatient();
-            patient.setName(dto.patient().name().trim());
-            patient.setBirthDate(dto.patient().birthDate());
-            patient.setImportantDescription(
-                    dto.patient().importantDescription()
-            );
-        }
-
-        GroupEntity updatedGroup = groupRepository.save(group);
-
-        return new GroupResponseDTO(updatedGroup);
-    }
-
-    @Transactional
-    public GroupResponseDTO joinGroup(
-            JoinGroupDTO dto,
-            UserEntity user) {
-
-        GroupEntity group =
-                groupRepository
-                        .findByInviteCode(dto.inviteCode())
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Código de convite inválido ou grupo não encontrado."
-                                )
-                        );
-
-        boolean alreadyMember =
-                group.getMembers()
-                        .stream()
-                        .anyMatch(m ->
-                                m.getUser()
-                                        .getId()
-                                        .equals(user.getId())
-                        );
-
-        if (alreadyMember) {
-            throw new RuntimeException(
-                    "O usuário já faz parte deste grupo."
-            );
-        }
-
-        GroupMemberEntity newMember =
-                new GroupMemberEntity();
-
-        newMember.setUser(user);
-        newMember.setRole(GroupRole.MEMBER);
-
-        group.addMember(newMember);
-
-        groupRepository.save(group);
-
-        return new GroupResponseDTO(group);
-    }
-
-    @Transactional(readOnly = true)
-    public GroupResponseDTO getMyGroup(
-            UserEntity user) {
-
-        GroupEntity group =
-                groupRepository
-                        .findByLeaderIdOrMembersUserId(
-                                user.getId(),
-                                user.getId()
-                        )
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "O usuário não pertence a nenhum grupo de cuidado."
-                                )
-                        );
-
-        return new GroupResponseDTO(group);
-    }
-
-    @Transactional(readOnly = true)
-    public GroupResponseDTO getGroupById(
-            Long id,
-            UserEntity user) {
-
-        GroupEntity group =
-                groupRepository.findById(id)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Grupo não encontrado para o ID especificado."
-                                )
-                        );
-
-        boolean isMemberOrLeader =
-                group.getLeader()
-                        .getId()
-                        .equals(user.getId())
-                ||
-                group.getMembers()
-                        .stream()
-                        .anyMatch(m ->
-                                m.getUser()
-                                        .getId()
-                                        .equals(user.getId())
-                        );
-
-        if (!isMemberOrLeader) {
-            throw new RuntimeException(
-                    "Acesso negado: você não pertence a este grupo."
-            );
-        }
-
-        return new GroupResponseDTO(group);
-    }
-
-    private String generateInviteCode() {
-
-        String code;
-
-        do {
-            StringBuilder sb =
-                    new StringBuilder(6);
-
-            for (int i = 0; i < 6; i++) {
-
-                sb.append(
-                        CHARACTERS.charAt(
-                                RANDOM.nextInt(
-                                        CHARACTERS.length()
-                                )
-                        )
-                );
-            }
-
-            code = sb.toString();
-
-        } while (
-                groupRepository.existsByInviteCode(code)
-        );
-
-        return code;
-    }
 }
 </file>
 
@@ -4462,123 +4287,158 @@ public class WeeklyProgressService {
 }
 </file>
 
-<file path="src/main/java/ajudavcapi/controller/AuthenticationController.java">
+<file path="src/main/java/ajudavcapi/controller/GroupMemberController.java">
 package ajudavcapi.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
-
-import ajudavcapi.domain.dto.auth.AuthenticationDTO;
-import ajudavcapi.domain.dto.auth.TokenResponseDTO;
-import ajudavcapi.domain.dto.auth.GoogleLoginDTO;
-import ajudavcapi.domain.dto.user.UserRequestDTO;
-import ajudavcapi.domain.dto.user.UserResponseDTO;
+import ajudavcapi.domain.dto.groupmember.GroupMemberResponseDTO;
+import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberRoleDTO;
+import ajudavcapi.domain.dto.groupmember.UpdateGroupMemberPermissionsDTO;
 import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.service.TokenService;
-import ajudavcapi.service.UserService;
+import ajudavcapi.service.GroupMemberService;
 import jakarta.validation.Valid;
-import java.net.URI;
-import java.util.Collections;
 
 @RestController
-@RequestMapping("/auth")
-public class AuthenticationController {
+@Tag(name = "Membros da Rede", description = "Gestão de membros, papéis e permissões customizadas do grupo.")
+@RequestMapping("/group-members")
+public class GroupMemberController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final GroupMemberService groupMemberService;
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private TokenService tokenService;
-
-    @Value("${spring.security.oauth2.client.registration.google.client-id}")
-    private String googleClientId;
-
-    @PostMapping("/login")
-    public ResponseEntity<TokenResponseDTO> login(@RequestBody @Valid AuthenticationDTO data) {
-        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
-        var auth = this.authenticationManager.authenticate(usernamePassword);
-
-        var token = tokenService.generateToken((UserEntity) auth.getPrincipal());
-        return ResponseEntity.ok(new TokenResponseDTO(token));
+    // Injeção via Construtor explícita
+    public GroupMemberController(GroupMemberService groupMemberService) {
+        this.groupMemberService = groupMemberService;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(
-            @RequestBody @Valid UserRequestDTO data,
-            UriComponentsBuilder uriBuilder) {
+    @Operation(summary = "Listar membros da rede", description = "Lista os membros do grupo do usuário autenticado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GroupMemberResponseDTO>> getGroupMembers(
+            @AuthenticationPrincipal UserEntity userLogado) {
 
-        try {
-            UserEntity novoUsuario = userService.adicionarUsuario(data);
-
-            URI uri = uriBuilder
-                    .path("/user/{id}")
-                    .buildAndExpand(novoUsuario.getId())
-                    .toUri();
-
-            return ResponseEntity
-                    .created(uri)
-                    .body(new UserResponseDTO(novoUsuario));
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(e.getMessage());
-        }
+        List<GroupMemberResponseDTO> members = groupMemberService.getGroupMembers(userLogado);
+        return ResponseEntity.ok(members);
     }
 
-    @PostMapping("/google")
-    public ResponseEntity<?> loginWithGoogle(@RequestBody @Valid GoogleLoginDTO data) {
-        try {
-            // 1. Valida o ID Token recebido do React Native com o Google
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                    .setAudience(Collections.singletonList(googleClientId))
-                    .build();
+    @Operation(summary = "Atualizar papel do membro", description = "Altera o papel do membro. Somente o líder real do grupo deve poder executar essa ação; a regra é validada no serviço.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recurso atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @PutMapping("/{id}/role")
+    public ResponseEntity<GroupMemberResponseDTO> updateMemberRole(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UpdateGroupMemberRoleDTO", required = true) @RequestBody @Valid UpdateGroupMemberRoleDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
 
-            GoogleIdToken idToken = verifier.verify(data.idToken());
-            
-            if (idToken == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido do Google.");
-            }
-
-            GoogleIdToken.Payload payload = idToken.getPayload();
-            String email = payload.getEmail();
-            String name = (String) payload.get("name");
-
-            // 2. Busca o usuário por e-mail ou cria um novo usando os métodos reais do UserService
-            UserEntity usuario = userService.buscarPorEmail(email)
-                .orElseGet(() -> {
-                    // Passamos uma senha vazia para indicar ao UserService que é uma conta do Google
-                    UserRequestDTO novoUserDTO = new UserRequestDTO(name, email, ""); 
-                    return userService.adicionarUsuario(novoUserDTO);
-                });
-
-            // 3. Reutiliza o seu TokenService para gerar o JWT da aplicação
-            String token = tokenService.generateToken(usuario);
-
-            // 4. Retorna no mesmo formato estruturado de resposta que o seu login tradicional
-            return ResponseEntity.ok(new TokenResponseDTO(token));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro na autenticação com o Google.");
-        }
+        GroupMemberResponseDTO response = groupMemberService.updateMemberRole(id, dto, userLogado);
+        return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "Atualizar permissões customizadas", description = "Atualiza canEditRoutine e canEditProgress. Somente o líder do grupo deve conceder ou revogar permissões.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recurso atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @PutMapping("/{id}/permissions")
+    public ResponseEntity<GroupMemberResponseDTO> updateMemberPermissions(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UpdateGroupMemberPermissionsDTO", required = true) @RequestBody @Valid UpdateGroupMemberPermissionsDTO dto,
+            @AuthenticationPrincipal UserEntity userLogado) {
+        return ResponseEntity.ok(groupMemberService.updateMemberPermissions(id, dto, userLogado));
+    }
+
+    @Operation(summary = "Remover membro", description = "Remove membro do grupo. A operação deve ser restrita ao líder real do grupo.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Recurso excluído sem corpo de resposta"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para excluir o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Exclusão conflita com regra de negócio")
+        })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> removeMember(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        groupMemberService.removeMember(id, userLogado);
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/dto/patient/CreatePatientDTO.java">
+package ajudavcapi.domain.dto.patient;
+
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDate;
+import java.util.List;
+
+import ajudavcapi.domain.dto.stroke.CreateStrokeDTO;
+import ajudavcapi.domain.enums.DiseaseType;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+
+public record CreatePatientDTO(
+    @NotBlank(message = "O nome do paciente é obrigatório")
+    @Schema(description = "Nome completo do paciente.")
+    String name,
+
+    @NotNull(message = "A data de nascimento é obrigatória")
+    @PastOrPresent(message = "A data de nascimento não pode ser uma data futura")
+    @Schema(description = "Data de nascimento no formato ISO yyyy-MM-dd.")
+    LocalDate birthDate,
+
+    @Schema(description = "Observações importantes para o cuidado.")
+
+    String importantDescription,
+
+    @Valid
+    @Schema(description = "Lista de eventos AVC/AIT informados para o paciente.")
+    List<CreateStrokeDTO> strokes,
+
+    @Schema(description = "Doenças e condições de saúde selecionadas.")
+
+    List<DiseaseType> diseases
+) {
 }
 </file>
 
@@ -4629,6 +4489,513 @@ public interface DeviceTokenRepository extends JpaRepository<DeviceToken, Long> 
 
     // Exclui um token quando o usuário faz logout no celular
     void deleteByToken(String token);
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/domain/repository/GroupRepository.java">
+package ajudavcapi.domain.repository;
+
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.UserEntity;
+
+public interface GroupRepository extends JpaRepository<GroupEntity, Long> {
+
+    List<GroupEntity> findByLeader(UserEntity leader);
+
+    @Query("SELECT DISTINCT g FROM GroupEntity g LEFT JOIN FETCH g.patient LEFT JOIN FETCH g.leader WHERE g.inviteCode = :inviteCode")
+    Optional<GroupEntity> findByInviteCode(@Param("inviteCode") String inviteCode);
+
+    boolean existsByInviteCode(String inviteCode);
+
+    @Query("SELECT DISTINCT g FROM GroupEntity g LEFT JOIN FETCH g.patient LEFT JOIN FETCH g.leader LEFT JOIN FETCH g.members m WHERE g.leader.id = :leaderId OR m.user.id = :userId")
+    Optional<GroupEntity> findByLeaderIdOrMembersUserId(@Param("leaderId") Long leaderId, @Param("userId") Long userId);
+
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/GroupService.java">
+package ajudavcapi.service;
+
+import java.security.SecureRandom;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.dto.group.CreateGroupDTO;
+import ajudavcapi.domain.dto.group.GroupResponseDTO;
+import ajudavcapi.domain.dto.group.JoinGroupDTO;
+import ajudavcapi.domain.dto.group.UpdateGroupDTO;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.GroupMemberEntity;
+import ajudavcapi.domain.entity.PatientEntity;
+import ajudavcapi.domain.entity.StrokeEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.DiseaseEntity;
+import ajudavcapi.domain.enums.GroupRole;
+import ajudavcapi.domain.repository.GroupRepository;
+
+@Service
+public class GroupService {
+
+    private final GroupRepository groupRepository;
+
+    private static final String CHARACTERS =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    private static final SecureRandom RANDOM =
+            new SecureRandom();
+
+    public GroupService(GroupRepository groupRepository) {
+        this.groupRepository = groupRepository;
+    }
+
+    @Transactional
+    public GroupResponseDTO createGroup(
+            CreateGroupDTO dto,
+            UserEntity leader) {
+
+        GroupEntity group = new GroupEntity();
+
+        group.setName(dto.name());
+        group.setLeader(leader);
+        group.setInviteCode(generateInviteCode());
+
+        if (dto.patient() != null) {
+
+            PatientEntity patient = new PatientEntity();
+
+            patient.setName(dto.patient().name().trim());
+            patient.setBirthDate(dto.patient().birthDate());
+            patient.setImportantDescription(
+                    dto.patient().importantDescription()
+            );
+
+            if (dto.patient().strokes() != null) {
+
+                for (ajudavcapi.domain.dto.stroke.CreateStrokeDTO strokeDTO
+                        : dto.patient().strokes()) {
+
+                    StrokeEntity stroke = new StrokeEntity();
+
+                    stroke.setStrokeType(
+                            strokeDTO.strokeType()
+                    );
+
+                    stroke.setStrokeDate(
+                            strokeDTO.strokeDate()
+                    );
+
+                    patient.addStroke(stroke); 
+                }
+            }
+
+    
+            if (dto.patient().diseases() != null) {
+                for (Object diseaseObj : dto.patient().diseases()) {
+                    DiseaseEntity disease = new DiseaseEntity();
+                    String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
+                    disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
+                    
+                    patient.addDisease(disease);
+                }
+            }
+            patient.setGroup(group);
+            group.setPatient(patient);
+        }
+
+        GroupMemberEntity leaderMember =
+                new GroupMemberEntity();
+
+        leaderMember.setUser(leader);
+        leaderMember.setRole(GroupRole.LEADER);
+
+        group.addMember(leaderMember);
+
+        GroupEntity savedGroup =
+                groupRepository.save(group);
+
+        return new GroupResponseDTO(savedGroup);
+    }
+
+    @Transactional
+    public GroupResponseDTO updateGroup(
+            Long id,
+            UpdateGroupDTO dto,
+            UserEntity user) {
+
+        GroupEntity group = groupRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(
+                        "Grupo não encontrado para o ID especificado."
+                ));
+
+        boolean isMemberOrLeader = group.getLeader().getId().equals(user.getId())
+                || group.getMembers().stream()
+                        .anyMatch(m -> m.getUser().getId().equals(user.getId()));
+
+        if (!isMemberOrLeader) {
+            throw new RuntimeException(
+                    "Acesso negado: você não tem permissão para alterar este grupo."
+            );
+        }
+
+        group.setName(dto.name());
+
+        if (dto.patient() != null && group.getPatient() != null) {
+            PatientEntity patient = group.getPatient();
+            patient.setName(dto.patient().name().trim());
+            patient.setBirthDate(dto.patient().birthDate());
+            patient.setImportantDescription(
+                    dto.patient().importantDescription()
+            );
+        }
+
+        GroupEntity updatedGroup = groupRepository.save(group);
+
+        return new GroupResponseDTO(updatedGroup);
+    }
+
+    @Transactional
+    public GroupResponseDTO joinGroup(
+            JoinGroupDTO dto,
+            UserEntity user) {
+
+        GroupEntity group =
+                groupRepository
+                        .findByInviteCode(dto.inviteCode())
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Código de convite inválido ou grupo não encontrado."
+                                )
+                        );
+
+        boolean alreadyMember =
+                group.getMembers()
+                        .stream()
+                        .anyMatch(m ->
+                                m.getUser()
+                                        .getId()
+                                        .equals(user.getId())
+                        );
+
+        if (alreadyMember) {
+            throw new RuntimeException(
+                    "O usuário já faz parte deste grupo."
+            );
+        }
+
+        GroupMemberEntity newMember =
+                new GroupMemberEntity();
+
+        newMember.setUser(user);
+        newMember.setRole(GroupRole.MEMBER);
+
+        group.addMember(newMember);
+
+        GroupEntity savedGroup = groupRepository.save(group);
+
+        return new GroupResponseDTO(savedGroup);
+    }
+
+    @Transactional(readOnly = true)
+    public GroupResponseDTO getMyGroup(
+            UserEntity user) {
+
+        GroupEntity group =
+                groupRepository
+                        .findByLeaderIdOrMembersUserId(
+                                user.getId(),
+                                user.getId()
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "O usuário não pertence a nenhum grupo de cuidado."
+                                )
+                        );
+
+        return new GroupResponseDTO(group);
+    }
+
+    @Transactional(readOnly = true)
+    public GroupResponseDTO getGroupById(
+            Long id,
+            UserEntity user) {
+
+        GroupEntity group =
+                groupRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Grupo não encontrado para o ID especificado."
+                                )
+                        );
+
+        boolean isMemberOrLeader =
+                group.getLeader()
+                        .getId()
+                        .equals(user.getId())
+                ||
+                group.getMembers()
+                        .stream()
+                        .anyMatch(m ->
+                                m.getUser()
+                                        .getId()
+                                        .equals(user.getId())
+                        );
+
+        if (!isMemberOrLeader) {
+            throw new RuntimeException(
+                    "Acesso negado: você não pertence a este grupo."
+            );
+        }
+
+        return new GroupResponseDTO(group);
+    }
+
+    private String generateInviteCode() {
+
+        String code;
+
+        do {
+            StringBuilder sb =
+                    new StringBuilder(6);
+
+            for (int i = 0; i < 6; i++) {
+
+                sb.append(
+                        CHARACTERS.charAt(
+                                RANDOM.nextInt(
+                                        CHARACTERS.length()
+                                )
+                        )
+                );
+            }
+
+            code = sb.toString();
+
+        } while (
+                groupRepository.existsByInviteCode(code)
+        );
+
+        return code;
+    }
+}
+</file>
+
+<file path="src/main/java/ajudavcapi/service/PatientService.java">
+package ajudavcapi.service;
+
+import java.util.Collections;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ajudavcapi.domain.dto.disease.DiseaseResponseDTO;
+import ajudavcapi.domain.dto.patient.CreatePatientDTO;
+import ajudavcapi.domain.dto.patient.PatientResponseDTO;
+import ajudavcapi.domain.dto.patient.UpdatePatientDTO;
+import ajudavcapi.domain.dto.stroke.StrokeResponseDTO;
+import ajudavcapi.domain.entity.DiseaseEntity;
+import ajudavcapi.domain.entity.GroupEntity;
+import ajudavcapi.domain.entity.PatientEntity;
+import ajudavcapi.domain.entity.StrokeEntity;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.repository.GroupRepository;
+import ajudavcapi.domain.repository.PatientRepository;
+
+@Service
+public class PatientService {
+
+    private final PatientRepository patientRepository;
+    private final GroupRepository groupRepository;
+
+    public PatientService(
+            PatientRepository patientRepository,
+            GroupRepository groupRepository) {
+
+        this.patientRepository = patientRepository;
+        this.groupRepository = groupRepository;
+    }
+
+    @Transactional
+    public PatientResponseDTO createPatient(
+            CreatePatientDTO dto,
+            UserEntity userLogado) {
+
+        GroupEntity group = findGroupByUser(userLogado);
+
+        if (group.getPatient() != null) {
+            throw new IllegalArgumentException(
+                "Este grupo já possui um paciente cadastrado."
+            );
+        }
+
+        PatientEntity patient = new PatientEntity();
+        patient.setName(dto.name());
+        patient.setBirthDate(dto.birthDate());
+        patient.setImportantDescription(dto.importantDescription());
+        patient.setGroup(group);
+
+        if (dto.strokes() != null) {
+            for (var strokeDTO : dto.strokes()) {
+                StrokeEntity stroke = new StrokeEntity();
+                stroke.setStrokeType(strokeDTO.strokeType());
+                stroke.setStrokeDate(strokeDTO.strokeDate());
+                patient.addStroke(stroke);
+            }
+        }
+
+        if (dto.diseases() != null) {
+            for (Object diseaseObj : dto.diseases()) {
+                DiseaseEntity disease = new DiseaseEntity();
+                String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
+                disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
+                patient.addDisease(disease);
+            }
+        }
+
+        PatientEntity savedPatient = patientRepository.saveAndFlush(patient);
+
+        group.setPatient(savedPatient);
+        groupRepository.save(group);
+        
+        // ✅ PRINT DO MÉTODO CREATE (Usando savedPatient)
+        System.out.println("💾 [CREATE] DOENÇAS SALVAS NO BANCO: " + savedPatient.getDiseases().size());
+        savedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
+        
+        return mapToResponseDTO(
+            savedPatient,
+            group.getId()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public PatientResponseDTO getPatientByGroup(
+            UserEntity userLogado) {
+
+        GroupEntity group = findGroupByUser(userLogado);
+
+        PatientEntity patient = group.getPatient();
+
+        if (patient == null) {
+            throw new IllegalArgumentException(
+                "Nenhum paciente cadastrado para este grupo."
+            );
+        }
+
+        return mapToResponseDTO(
+            patient,
+            group.getId()
+        );
+    }
+
+    @Transactional
+    public PatientResponseDTO updatePatient(
+            Long id,
+            UpdatePatientDTO dto,
+            UserEntity userLogado) {
+
+        GroupEntity group = findGroupByUser(userLogado);
+
+        PatientEntity patient = patientRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                    "Paciente não encontrado com o ID fornecido."
+                ));
+
+        if (group.getPatient() == null || !group.getPatient().getId().equals(patient.getId())) {
+            throw new IllegalArgumentException(
+                "Você não tem permissão para alterar este paciente."
+            );
+        }
+
+        patient.setName(dto.name());
+        patient.setBirthDate(dto.birthDate());
+        patient.setImportantDescription(dto.importantDescription());
+
+        if (dto.strokes() != null) {
+            patient.getStrokes().clear();
+            for (var strokeDTO : dto.strokes()) {
+                StrokeEntity stroke = new StrokeEntity();
+                stroke.setStrokeType(strokeDTO.strokeType());
+                stroke.setStrokeDate(strokeDTO.strokeDate());
+                patient.addStroke(stroke); 
+            }
+        }
+
+        if (dto.diseases() != null) {
+            patient.getDiseases().clear();
+            for (Object diseaseObj : dto.diseases()) {
+                DiseaseEntity disease = new DiseaseEntity();
+                String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
+                disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
+                patient.addDisease(disease);
+            }
+        }
+
+        PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
+
+        // ✅ CORRIGIDO: PRINT DO MÉTODO UPDATE (Mudado de savedPatient para updatedPatient)
+        System.out.println("💾 [UPDATE] DOENÇAS ATUALIZADAS NO BANCO: " + updatedPatient.getDiseases().size());
+        updatedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
+
+        return mapToResponseDTO(
+            updatedPatient,
+            group.getId()
+        );
+    }
+
+    private GroupEntity findGroupByUser(UserEntity userLogado) {
+        if (userLogado.getGroup() != null) {
+            return userLogado.getGroup();
+        }
+
+        return groupRepository.findByLeader(userLogado)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                    "Usuário não está vinculado a um grupo."
+                ));
+    }
+
+    private PatientResponseDTO mapToResponseDTO(
+            PatientEntity patient,
+            Long groupId) {
+
+        List<StrokeResponseDTO> strokes = patient.getStrokes() == null 
+                ? Collections.emptyList() 
+                : patient.getStrokes()
+                    .stream()
+                    .map(stroke -> new StrokeResponseDTO(
+                        stroke.getId(),
+                        stroke.getStrokeType(),
+                        stroke.getStrokeDate()
+                    ))
+                    .toList();
+
+        List<DiseaseResponseDTO> diseases = patient.getDiseases() == null 
+                ? Collections.emptyList() 
+                : patient.getDiseases()
+                    .stream()
+                    .map(disease -> new DiseaseResponseDTO(
+                        disease.getId(),
+                        disease.getType()
+                    ))
+                    .toList();
+
+        return new PatientResponseDTO(
+            patient.getId(),
+            patient.getName(),
+            patient.getBirthDate(),
+            patient.getImportantDescription(),
+            strokes,
+            diseases,
+            groupId
+        );
+    }
 }
 </file>
 
@@ -4725,6 +5092,160 @@ public class UserService {
 }
 </file>
 
+<file path="src/main/java/ajudavcapi/controller/AuthenticationController.java">
+package ajudavcapi.controller;
+
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+
+import ajudavcapi.domain.dto.auth.AuthenticationDTO;
+import ajudavcapi.domain.dto.auth.TokenResponseDTO;
+import ajudavcapi.domain.dto.auth.GoogleLoginDTO;
+import ajudavcapi.domain.dto.user.UserRequestDTO;
+import ajudavcapi.domain.dto.user.UserResponseDTO;
+import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.service.TokenService;
+import ajudavcapi.service.UserService;
+import jakarta.validation.Valid;
+import java.net.URI;
+import java.util.Collections;
+
+@RestController
+@Tag(name = "Autenticação", description = "Autenticação local, cadastro e login com Google.")
+@RequestMapping("/auth")
+public class AuthenticationController {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private TokenService tokenService;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
+
+    @Operation(summary = "Autenticar com e-mail e senha", description = "Valida as credenciais e retorna um JWT para uso no cabeçalho Authorization: Bearer. Não exige JWT.", security = {})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @PostMapping("/login")
+    public ResponseEntity<TokenResponseDTO> login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para AuthenticationDTO", required = true) @RequestBody @Valid AuthenticationDTO data) {
+        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
+        var auth = this.authenticationManager.authenticate(usernamePassword);
+
+        var token = tokenService.generateToken((UserEntity) auth.getPrincipal());
+        return ResponseEntity.ok(new TokenResponseDTO(token));
+    }
+
+    @Operation(summary = "Cadastrar conta", description = "Cria uma conta local e retorna o usuário cadastrado. Não exige JWT.", security = {})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso; confira o cabeçalho Location"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
+            @ApiResponse(responseCode = "404", description = "Grupo ou recurso relacionado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
+        })
+    @PostMapping("/register")
+    public ResponseEntity<?> register(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UserRequestDTO", required = true) @RequestBody @Valid UserRequestDTO data,
+            UriComponentsBuilder uriBuilder) {
+
+        try {
+            UserEntity novoUsuario = userService.adicionarUsuario(data);
+
+            URI uri = uriBuilder
+                    .path("/user/{id}")
+                    .buildAndExpand(novoUsuario.getId())
+                    .toUri();
+
+            return ResponseEntity
+                    .created(uri)
+                    .body(new UserResponseDTO(novoUsuario));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Autenticar com Google", description = "Valida o ID token emitido pelo Google e retorna um JWT da aplicação. Não exige JWT.", security = {})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
+            @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
+        })
+    @PostMapping("/google")
+    public ResponseEntity<?> loginWithGoogle(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para GoogleLoginDTO", required = true) @RequestBody @Valid GoogleLoginDTO data) {
+        try {
+            // 1. Valida o ID Token recebido do React Native com o Google
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(data.idToken());
+            
+            if (idToken == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido do Google.");
+            }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+
+            // 2. Busca o usuário por e-mail ou cria um novo usando os métodos reais do UserService
+            UserEntity usuario = userService.buscarPorEmail(email)
+                .orElseGet(() -> {
+                    // Passamos uma senha vazia para indicar ao UserService que é uma conta do Google
+                    UserRequestDTO novoUserDTO = new UserRequestDTO(name, email, ""); 
+                    return userService.adicionarUsuario(novoUserDTO);
+                });
+
+            // 3. Reutiliza o seu TokenService para gerar o JWT da aplicação
+            String token = tokenService.generateToken(usuario);
+
+            // 4. Retorna no mesmo formato estruturado de resposta que o seu login tradicional
+            return ResponseEntity.ok(new TokenResponseDTO(token));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro na autenticação com o Google.");
+        }
+    }
+}
+</file>
+
 <file path="src/main/java/ajudavcapi/domain/repository/UserRepository.java">
 package ajudavcapi.domain.repository;
 
@@ -4739,88 +5260,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByName(String name);
     Optional<UserEntity> findByNameIgnoreCase(String name);
     boolean existsByNameIgnoreCase(String name);
-}
-</file>
-
-<file path="src/main/java/ajudavcapi/config/SecurityConfigurations.java">
-package ajudavcapi.config;
-
-import java.util.List;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import lombok.RequiredArgsConstructor;
-
-@Configuration
-@EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)
-@RequiredArgsConstructor
-public class SecurityConfigurations {
-
-    private final SecurityFilter securityFilter;
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(req -> {
-                    req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
-
-                    // Rotas públicas do Swagger
-                    req.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll();
-
-                    // Rotas públicas de Autenticação
-                    req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/auth/register").permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/auth/google").permitAll();
-
-                    req.anyRequest().authenticated();
-                })
-                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Authorization"));
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-            throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 }
 </file>
 
@@ -4955,6 +5394,150 @@ public class UserEntity implements UserDetails, Serializable {
         return true;
     }
 }
+</file>
+
+<file path="src/main/java/ajudavcapi/config/SecurityConfigurations.java">
+package ajudavcapi.config;
+
+import java.util.List;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import lombok.RequiredArgsConstructor;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
+public class SecurityConfigurations {
+
+    private final SecurityFilter securityFilter;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(req -> {
+                    req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+
+                    // Rotas públicas do Swagger
+                    req.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll();
+
+                    // Rotas públicas de Autenticação
+                    req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/auth/register").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/auth/google").permitAll();
+
+                    req.anyRequest().authenticated();
+                })
+                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+</file>
+
+<file path="src/main/resources/application.properties">
+spring.application.name=demo
+server.address=0.0.0.0
+server.port=8055
+
+# --- CONEXÃO BANCO PRODUÇÃO (MYSQL HOSTINGER) ---
+spring.datasource.url=jdbc:mysql://76.13.88.17:3306/u947092305_TCCTI27GRUPO2?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
+spring.datasource.username=u947092305_GRUPO2
+spring.datasource.password=Fundatec@01
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# Mova o database-platform daqui para não conflitar com o H2
+spring.jpa.hibernate.ddl-auto=update
+spring.sql.init.mode=never
+spring.jpa.open-in-view=false
+
+api.security.token.secret=bzzba23423hsjakas
+
+# --- CONFIGURAÇÃO DO POOL HIKARI ---
+spring.datasource.hikari.max-lifetime=60000
+spring.datasource.hikari.connection-timeout=30000
+spring.datasource.hikari.validation-timeout=30000
+
+# Ativa o Perfil de Testes
+spring.profiles.active=test
+
+# --- CONFIGURAÇÃO DO GOOGLE OAUTH2 (FRONTEND-DRIVEN) ---
+spring.security.oauth2.client.registration.google.client-id=818045939260-fim8itj3ajsogffhlmpejkbvatsrc2b0.apps.googleusercontent.com
+logging.level.org.springframework.security=DEBUG
+</file>
+
+<file path="Dockerfile">
+# ---------- Build ----------
+FROM eclipse-temurin:21-jdk-jammy AS build
+
+WORKDIR /app
+
+# Copia arquivos do Maven
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+
+RUN chmod +x mvnw
+RUN ./mvnw dependency:go-offline
+
+# Copia o código
+COPY src src
+
+# Gera o JAR
+RUN ./mvnw clean package -DskipTests
+
+# ---------- Runtime ----------
+FROM eclipse-temurin:21-jre-jammy
+
+WORKDIR /app
+
+COPY --from=build /app/target/*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
 </file>
 
 <file path="pom.xml">
@@ -5127,68 +5710,6 @@ public class UserEntity implements UserDetails, Serializable {
 		</plugins>
 	</build>
 </project>
-</file>
-
-<file path="src/main/resources/application.properties">
-spring.application.name=demo
-server.address=0.0.0.0
-server.port=8055
-
-# --- CONEXÃO BANCO PRODUÇÃO (MYSQL HOSTINGER) ---
-spring.datasource.url=jdbc:mysql://76.13.88.17:3306/u947092305_TCCTI27GRUPO2?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
-spring.datasource.username=u947092305_GRUPO2
-spring.datasource.password=Fundatec@01
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-
-# Mova o database-platform daqui para não conflitar com o H2
-spring.jpa.hibernate.ddl-auto=update
-spring.sql.init.mode=never
-spring.jpa.open-in-view=false
-
-api.security.token.secret=bzzba23423hsjakas
-
-# --- CONFIGURAÇÃO DO POOL HIKARI ---
-spring.datasource.hikari.max-lifetime=60000
-spring.datasource.hikari.connection-timeout=30000
-spring.datasource.hikari.validation-timeout=30000
-
-# Ativa o Perfil de Testes
-spring.profiles.active=test
-
-# --- CONFIGURAÇÃO DO GOOGLE OAUTH2 (FRONTEND-DRIVEN) ---
-spring.security.oauth2.client.registration.google.client-id=818045939260-fim8itj3ajsogffhlmpejkbvatsrc2b0.apps.googleusercontent.com
-logging.level.org.springframework.security=DEBUG
-</file>
-
-<file path="Dockerfile">
-# ---------- Build ----------
-FROM eclipse-temurin:21-jdk-jammy AS build
-
-WORKDIR /app
-
-# Copia arquivos do Maven
-COPY .mvn .mvn
-COPY mvnw pom.xml ./
-
-RUN chmod +x mvnw
-RUN ./mvnw dependency:go-offline
-
-# Copia o código
-COPY src src
-
-# Gera o JAR
-RUN ./mvnw clean package -DskipTests
-
-# ---------- Runtime ----------
-FROM eclipse-temurin:21-jre-jammy
-
-WORKDIR /app
-
-COPY --from=build /app/target/*.jar app.jar
-
-EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
 </file>
 
 </files>

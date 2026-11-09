@@ -24,6 +24,8 @@ public class WeeklyProgressMapper {
                 entity.getCountTriste(),
                 entity.getDescription(),
                 entity.getWeekOfMonth(),
+                entity.getMonth(),
+                entity.getYear(), 
                 entity.getCreatedAt(),
                 entity.getUser() != null ? entity.getUser().getName() : "Cuidador",
                 entity.getGroup() != null ? entity.getGroup().getId() : null,

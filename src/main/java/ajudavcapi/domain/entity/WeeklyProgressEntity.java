@@ -29,6 +29,16 @@ public class WeeklyProgressEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
+    @Column(name = "progress_month", nullable = false)
+    private Integer month;
+
+    @Column(name = "progress_year", nullable = false)
+    private Integer year;
+
+    @Min(1) @Max(4)
+    @Column(name = "week_of_month", nullable = false)
+    private Integer weekOfMonth;
+
     @Min(1) @Max(10)
     @Column(name = "communication_score", nullable = false)
     private Integer communicationScore;
@@ -58,9 +68,6 @@ public class WeeklyProgressEntity {
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
-
-    @Column(name = "week_of_month", nullable = false)
-    private Integer weekOfMonth;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

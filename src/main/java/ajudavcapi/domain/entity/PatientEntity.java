@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -46,19 +47,20 @@ public class PatientEntity {
     private String importantDescription;
 
     @OneToMany(
-        mappedBy = "patient",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
-    private List<StrokeEntity> strokes = new ArrayList<>();
+            mappedBy = "patient",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER 
+        )
+        private List<StrokeEntity> strokes = new ArrayList<>();
 
-    @OneToMany(
-        mappedBy = "patient",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
-    private List<DiseaseEntity> diseases = new ArrayList<>();
-
+        @OneToMany(
+            mappedBy = "patient",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER
+        )
+        private List<DiseaseEntity> diseases = new ArrayList<>();
     @JsonIgnore
     @OneToOne(mappedBy = "patient")
     private GroupEntity group;

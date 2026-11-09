@@ -14,6 +14,7 @@ import ajudavcapi.domain.entity.GroupMemberEntity;
 import ajudavcapi.domain.entity.PatientEntity;
 import ajudavcapi.domain.entity.StrokeEntity;
 import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.entity.DiseaseEntity;
 import ajudavcapi.domain.enums.GroupRole;
 import ajudavcapi.domain.repository.GroupRepository;
 
@@ -68,12 +69,20 @@ public class GroupService {
                             strokeDTO.strokeDate()
                     );
 
-                    stroke.setPatient(patient);
-
-                    patient.getStrokes().add(stroke);
+                    patient.addStroke(stroke); 
                 }
             }
 
+    
+            if (dto.patient().diseases() != null) {
+                for (Object diseaseObj : dto.patient().diseases()) {
+                    DiseaseEntity disease = new DiseaseEntity();
+                    String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
+                    disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
+                    
+                    patient.addDisease(disease);
+                }
+            }
             patient.setGroup(group);
             group.setPatient(patient);
         }

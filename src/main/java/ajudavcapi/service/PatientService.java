@@ -57,19 +57,16 @@ public class PatientService {
                 StrokeEntity stroke = new StrokeEntity();
                 stroke.setStrokeType(strokeDTO.strokeType());
                 stroke.setStrokeDate(strokeDTO.strokeDate());
-                stroke.setPatient(patient);
-
-                patient.getStrokes().add(stroke);
+                patient.addStroke(stroke);
             }
         }
 
         if (dto.diseases() != null) {
-            for (var diseaseType : dto.diseases()) {
+            for (Object diseaseObj : dto.diseases()) {
                 DiseaseEntity disease = new DiseaseEntity();
-                disease.setType(diseaseType);
-                disease.setPatient(patient);
-
-                patient.getDiseases().add(disease);
+                String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
+                disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
+                patient.addDisease(disease);
             }
         }
 
@@ -137,20 +134,17 @@ public class PatientService {
                 StrokeEntity stroke = new StrokeEntity();
                 stroke.setStrokeType(strokeDTO.strokeType());
                 stroke.setStrokeDate(strokeDTO.strokeDate());
-                stroke.setPatient(patient);
-
-                patient.getStrokes().add(stroke);
+                patient.addStroke(stroke); 
             }
         }
 
         if (dto.diseases() != null) {
             patient.getDiseases().clear();
-            for (var diseaseType : dto.diseases()) {
+            for (Object diseaseObj : dto.diseases()) {
                 DiseaseEntity disease = new DiseaseEntity();
-                disease.setType(diseaseType);
-                disease.setPatient(patient);
-
-                patient.getDiseases().add(disease);
+                String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
+                disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
+                patient.addDisease(disease);
             }
         }
 

@@ -1,6 +1,4 @@
-
 package ajudavcapi.domain.dto.weeklyProgress;
-
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
@@ -18,6 +16,8 @@ public record WeeklyProgressResponseDTO(
     Integer countTriste,
     String description,
     Integer weekOfMonth,
+    Integer month,
+    Integer year,  
     LocalDateTime createdAt,
     String authorName,
     Long groupId,
