@@ -54,6 +54,6 @@ public class GroupMemberEntity {
     @Column(name = "can_edit_routine")
     private boolean canEditRoutine = false;
 
-    @Column(name = "can_edit_progress")
+    @Column(name = "can_edit_progress", nullable = false)
     private boolean canEditProgress = false;
 }
