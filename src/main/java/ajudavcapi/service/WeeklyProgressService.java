@@ -2,6 +2,7 @@
 package ajudavcapi.service;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
@@ -59,39 +60,67 @@ public class WeeklyProgressService {
 
         GroupEntity group = getUserGroup(userLogado);
         ensureGroupActive(group);
-
         requireProgressPermission(group, userLogado);
 
+        // Data de referência do registro
+        LocalDate referenceDate = LocalDate.now();
+
+        // Cálculo automático do período
+        int month = referenceDate.getMonthValue();
+        int year = referenceDate.getYear();
+
+        // Divide o mês em quatro períodos:
+        // Semana 1: dias 01 a 07
+        // Semana 2: dias 08 a 14
+        // Semana 3: dias 15 a 21
+        // Semana 4: dias 22 até o final do mês
+        int weekOfMonth = Math.min(
+                ((referenceDate.getDayOfMonth() - 1) / 7) + 1,
+                4
+        );
+
+        // Procura um registro existente para a semana atual
         WeeklyProgressEntity entity = weeklyProgressRepository
                 .findByGroupIdAndYearAndMonthAndWeekOfMonth(
                         group.getId(),
-                        dto.year(),
-                        dto.month(),
-                        dto.weekOfMonth())
+                        year,
+                        month,
+                        weekOfMonth
+                )
                 .orElseGet(WeeklyProgressEntity::new);
 
         boolean isNew = entity.getId() == null;
 
         entity.setUser(userLogado);
         entity.setGroup(group);
-        entity.setYear(dto.year());
-        entity.setMonth(dto.month());
-        entity.setWeekOfMonth(dto.weekOfMonth());
+
+        entity.setYear(year);
+        entity.setMonth(month);
+        entity.setWeekOfMonth(weekOfMonth);
 
         entity.setCommunicationScore(dto.communicationScore());
         entity.setMobilityScore(dto.mobilityScore());
         entity.setMemoryScore(dto.memoryScore());
 
         entity.setCountAnimo(
-                dto.countAnimo() != null ? dto.countAnimo() : 0);
+                dto.countAnimo() != null ? dto.countAnimo() : 0
+        );
+
         entity.setCountFeliz(
-                dto.countFeliz() != null ? dto.countFeliz() : 0);
+                dto.countFeliz() != null ? dto.countFeliz() : 0
+        );
+
         entity.setCountApatia(
-                dto.countApatia() != null ? dto.countApatia() : 0);
+                dto.countApatia() != null ? dto.countApatia() : 0
+        );
+
         entity.setCountRaiva(
-                dto.countRaiva() != null ? dto.countRaiva() : 0);
+                dto.countRaiva() != null ? dto.countRaiva() : 0
+        );
+
         entity.setCountTriste(
-                dto.countTriste() != null ? dto.countTriste() : 0);
+                dto.countTriste() != null ? dto.countTriste() : 0
+        );
 
         entity.setDescription(dto.description());
 
@@ -102,22 +131,25 @@ public class WeeklyProgressService {
         WeeklyProgressEntity saved =
                 weeklyProgressRepository.save(entity);
 
+        // Registro de auditoria
         activityLogService.createSystemLog(
                 userLogado,
                 group,
                 isNew
                         ? "Progresso semanal registrado"
                         : "Progresso semanal atualizado",
-                "Foi " + (isNew ? "registrado" : "atualizado")
+                "Foi "
+                        + (isNew ? "registrado" : "atualizado")
                         + " o acompanhamento da Semana "
-                        + dto.weekOfMonth()
+                        + weekOfMonth
                         + " do mês "
-                        + dto.month()
+                        + month
                         + "/"
-                        + dto.year()
+                        + year
                         + ".",
                 isNew ? "CREATE_PROGRESS" : "UPDATE_PROGRESS",
-                "AUDIT");
+                "AUDIT"
+        );
 
         return mapToDTO(saved);
     }
@@ -142,19 +174,20 @@ public class WeeklyProgressService {
 
         GroupEntity group = getUserGroup(userLogado);
         ensureGroupActive(group);
-
         requireProgressPermission(group, userLogado);
 
         WeeklyProgressEntity entity = weeklyProgressRepository
                 .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Registro de progresso não encontrado."));
+                        "Registro de progresso não encontrado."
+                ));
 
         if (entity.getGroup() == null
                 || !entity.getGroup().getId().equals(group.getId())) {
 
             throw new AccessDeniedException(
-                    "Você não tem permissão para acessar este registro.");
+                    "Você não tem permissão para acessar este registro."
+            );
         }
 
         activityLogService.createSystemLog(
@@ -163,7 +196,8 @@ public class WeeklyProgressService {
                 "Registro de progresso excluído",
                 "Um registro de progresso semanal foi excluído.",
                 "DELETE_PROGRESS",
-                "AUDIT");
+                "AUDIT"
+        );
 
         weeklyProgressRepository.delete(entity);
     }
@@ -174,7 +208,8 @@ public class WeeklyProgressService {
                 || group.getStatus() == GroupStatus.ARCHIVED) {
 
             throw new ConflictException(
-                    "Este grupo está arquivado e permite somente consultas.");
+                    "Este grupo está arquivado e permite somente consultas."
+            );
         }
     }
 
@@ -191,7 +226,8 @@ public class WeeklyProgressService {
         GroupMemberEntity member = groupMemberRepository
                 .findByGroupIdAndUserId(group.getId(), user.getId())
                 .orElseThrow(() -> new AccessDeniedException(
-                        "Usuário não pertence a este grupo."));
+                        "Usuário não pertence a este grupo."
+                ));
 
         if (member.getRole() == GroupRole.LEADER
                 || member.isCanEditProgress()) {
@@ -199,7 +235,8 @@ public class WeeklyProgressService {
         }
 
         throw new AccessDeniedException(
-                "O líder não concedeu permissão para editar o progresso semanal.");
+                "O líder não concedeu permissão para editar o progresso semanal."
+        );
     }
 
     private WeeklyProgressResponseDTO mapToDTO(
@@ -224,33 +261,41 @@ public class WeeklyProgressService {
                         .countByGroupIdAndEventDateTimeBetween(
                                 groupId,
                                 startPeriod,
-                                endPeriod));
+                                endPeriod
+                        )
+        );
 
         int completed = Math.toIntExact(
                 calendarEventRepository
                         .countCompletedByGroupIdAndEventDateTimeBetween(
                                 groupId,
                                 startPeriod,
-                                endPeriod));
+                                endPeriod
+                        )
+        );
 
         return weeklyProgressMapper.toResponseDTO(
                 entity,
                 planned,
-                completed);
+                completed
+        );
     }
 
     private GroupEntity getUserGroup(UserEntity user) {
 
         if (user == null || user.getId() == null) {
             throw new AccessDeniedException(
-                    "Usuário não autenticado.");
+                    "Usuário não autenticado."
+            );
         }
 
         return groupRepository
                 .findByLeaderIdOrMembersUserId(
                         user.getId(),
-                        user.getId())
+                        user.getId()
+                )
                 .orElseThrow(() -> new AccessDeniedException(
-                        "Usuário não possui nenhum grupo associado."));
+                        "Usuário não possui nenhum grupo associado."
+                ));
     }
 }
