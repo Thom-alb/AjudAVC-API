@@ -12,13 +12,13 @@ import ajudavcapi.domain.dto.group.UpdateGroupDTO;
 import ajudavcapi.domain.entity.GroupEntity;
 import ajudavcapi.domain.entity.GroupMemberEntity;
 import ajudavcapi.domain.entity.PatientEntity;
-import ajudavcapi.domain.entity.StrokeEntity;
 import ajudavcapi.domain.entity.UserEntity;
-import ajudavcapi.domain.entity.DiseaseEntity;
 import ajudavcapi.domain.enums.GroupRole;
-import ajudavcapi.exception.GroupNotFoundException;
+import ajudavcapi.domain.mapper.PatientMapper;
 import ajudavcapi.domain.repository.GroupRepository;
 import ajudavcapi.domain.repository.UserRepository;
+import ajudavcapi.exception.ConflictException;
+import ajudavcapi.exception.GroupNotFoundException;
 
 @Service
 public class GroupService {
@@ -37,6 +37,21 @@ public class GroupService {
                 this.userRepository = userRepository;
         }
 
+        /**
+         * Cria o grupo e, opcionalmente, o paciente (com AVCs e doenças) numa única
+         * transação.
+         *
+         * Ordem deliberada:
+         * 1) validar e GERAR o código de convite (faz query) ANTES de alterar qualquer
+         * entidade gerenciada. Antes, o líder já apontava para um grupo ainda
+         * transiente quando a query rodava, o que expõe o auto-flush a
+         * "object references an unsaved transient instance".
+         * 2) montar o grafo em memória (grupo -> paciente -> AVCs/doenças; grupo ->
+         * membro líder).
+         * 3) um único saveAndFlush(group): o cascade persiste paciente, AVCs, doenças
+         * e membro, na ordem correta das FKs.
+         * 4) SOMENTE depois vincular users.group_id (grupo já persistido).
+         */
         @Transactional
         public GroupResponseDTO createGroup(
                         CreateGroupDTO dto,
@@ -51,63 +66,30 @@ public class GroupService {
                                                 "Líder não encontrado."));
 
                 if (managedLeader.getGroup() != null) {
-                        throw new IllegalArgumentException(
+                        throw new ConflictException(
                                         "O usuário já está associado a um grupo.");
                 }
 
+                String inviteCode = generateInviteCode(); // (1) query antes de mutar entidades
+
                 GroupEntity group = new GroupEntity();
-
-                group.setName(dto.name());
+                group.setName(dto.name().trim());
                 group.setLeader(managedLeader);
-                managedLeader.setGroup(group);
-                group.setInviteCode(generateInviteCode());
+                group.setInviteCode(inviteCode);
 
-                if (dto.patient() != null) {
-
-                        PatientEntity patient = new PatientEntity();
-
-                        patient.setName(dto.patient().name().trim());
-                        patient.setBirthDate(dto.patient().birthDate());
-                        patient.setImportantDescription(
-                                        dto.patient().importantDescription());
-
-                        if (dto.patient().strokes() != null) {
-
-                                for (ajudavcapi.domain.dto.stroke.CreateStrokeDTO strokeDTO : dto.patient().strokes()) {
-
-                                        StrokeEntity stroke = new StrokeEntity();
-
-                                        stroke.setStrokeType(
-                                                        strokeDTO.strokeType());
-
-                                        stroke.setStrokeDate(
-                                                        strokeDTO.strokeDate());
-
-                                        patient.addStroke(stroke);
-                                }
-                        }
-
-                        if (dto.patient().diseases() != null) {
-                                for (Object diseaseObj : dto.patient().diseases()) {
-                                        DiseaseEntity disease = new DiseaseEntity();
-                                        String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
-                                        disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
-
-                                        patient.addDisease(disease);
-                                }
-                        }
-                        patient.setGroup(group);
-                        group.setPatient(patient);
+                if (dto.patient() != null) { // (2)
+                        PatientEntity patient = PatientMapper.toEntity(dto.patient());
+                        group.setPatient(patient); // sincroniza os dois lados do OneToOne
                 }
 
                 GroupMemberEntity leaderMember = new GroupMemberEntity();
-
                 leaderMember.setUser(managedLeader);
                 leaderMember.setRole(GroupRole.LEADER);
-
                 group.addMember(leaderMember);
 
-                GroupEntity savedGroup = groupRepository.save(group);
+                GroupEntity savedGroup = groupRepository.saveAndFlush(group); // (3)
+
+                managedLeader.setGroup(savedGroup); // (4) dirty-checking grava users.group_id no commit
 
                 return new GroupResponseDTO(savedGroup);
         }
@@ -141,9 +123,8 @@ public class GroupService {
 
                 group.setName(dto.name().trim());
 
-                GroupEntity updatedGroup = groupRepository.save(group);
-
-                return new GroupResponseDTO(updatedGroup);
+                // Entidade já gerenciada: o UPDATE sai no commit; não é necessário save().
+                return new GroupResponseDTO(group);
         }
 
         @Transactional
@@ -185,11 +166,12 @@ public class GroupService {
                 newMember.setRole(GroupRole.MEMBER);
 
                 group.addMember(newMember);
+
+                // group já é gerenciado: o flush no commit persiste o membro (cascade) e o
+                // UPDATE de users.group_id. Sem save() redundante (que faria merge).
                 managedUser.setGroup(group);
 
-                GroupEntity savedGroup = groupRepository.save(group);
-
-                return new GroupResponseDTO(savedGroup);
+                return new GroupResponseDTO(group);
         }
 
         @Transactional(readOnly = true)
@@ -215,21 +197,22 @@ public class GroupService {
                         Long id,
                         UserEntity user) {
 
-                GroupEntity group = groupRepository.findById(id)
-                                .orElseThrow(() -> new GroupNotFoundException(
-                                                "Grupo não encontrado para o ID especificado."));
-
                 if (user == null || user.getId() == null) {
                         throw new IllegalArgumentException(
                                         "Usuário autenticado não identificado.");
                 }
 
-                boolean isMemberOrLeader = group.getLeader() != null
-                                && group.getLeader().getId().equals(user.getId())
-                                || group.getMembers().stream()
-                                                .anyMatch(member -> member.getUser().getId().equals(user.getId()));
+                GroupEntity group = groupRepository.findById(id)
+                                .orElseThrow(() -> new GroupNotFoundException(
+                                                "Grupo não encontrado para o ID especificado."));
 
-                if (!isMemberOrLeader) {
+                boolean isLeader = group.getLeader() != null
+                                && group.getLeader().getId().equals(user.getId());
+
+                boolean isMember = group.getMembers().stream()
+                                .anyMatch(member -> member.getUser().getId().equals(user.getId()));
+
+                if (!isLeader && !isMember) {
                         throw new IllegalArgumentException(
                                         "Você não possui acesso a este grupo.");
                 }
@@ -245,11 +228,7 @@ public class GroupService {
                         StringBuilder sb = new StringBuilder(6);
 
                         for (int i = 0; i < 6; i++) {
-
-                                sb.append(
-                                                CHARACTERS.charAt(
-                                                                RANDOM.nextInt(
-                                                                                CHARACTERS.length())));
+                                sb.append(CHARACTERS.charAt(RANDOM.nextInt(CHARACTERS.length())));
                         }
 
                         code = sb.toString();

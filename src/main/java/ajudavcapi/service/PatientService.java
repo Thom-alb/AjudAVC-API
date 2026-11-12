@@ -1,24 +1,21 @@
 package ajudavcapi.service;
 
-import java.util.Collections;
-import java.util.List;
-
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ajudavcapi.domain.dto.disease.DiseaseResponseDTO;
 import ajudavcapi.domain.dto.patient.CreatePatientDTO;
 import ajudavcapi.domain.dto.patient.PatientResponseDTO;
 import ajudavcapi.domain.dto.patient.UpdatePatientDTO;
-import ajudavcapi.domain.dto.stroke.StrokeResponseDTO;
-import ajudavcapi.domain.entity.DiseaseEntity;
 import ajudavcapi.domain.entity.GroupEntity;
 import ajudavcapi.domain.entity.PatientEntity;
-import ajudavcapi.domain.entity.StrokeEntity;
 import ajudavcapi.domain.entity.UserEntity;
+import ajudavcapi.domain.mapper.PatientMapper;
 import ajudavcapi.domain.repository.GroupRepository;
 import ajudavcapi.domain.repository.PatientRepository;
-import ajudavcapi.domain.enums.DiseaseType;
+import ajudavcapi.exception.ConflictException;
+import ajudavcapi.exception.GroupNotFoundException;
+import ajudavcapi.exception.ResourceNotFoundException;
 
 @Service
 public class PatientService {
@@ -42,61 +39,33 @@ public class PatientService {
         GroupEntity group = findGroupByUser(userLogado);
 
         if (group.getPatient() != null) {
-            throw new IllegalArgumentException(
+            throw new ConflictException(
                     "Este grupo já possui um paciente cadastrado.");
         }
 
-        PatientEntity patient = new PatientEntity();
-        patient.setName(dto.name());
-        patient.setBirthDate(dto.birthDate());
-        patient.setImportantDescription(dto.importantDescription());
-        patient.setGroup(group);
+        // persiste paciente + AVCs + doenças (cascade) e obtém o id
+        PatientEntity patient = patientRepository.save(PatientMapper.toEntity(dto));
 
-        if (dto.strokes() != null) {
-            for (var strokeDTO : dto.strokes()) {
-                StrokeEntity stroke = new StrokeEntity();
-                stroke.setStrokeType(strokeDTO.strokeType());
-                stroke.setStrokeDate(strokeDTO.strokeDate());
-                patient.addStroke(stroke);
-            }
-        }
+        // o GroupEntity é o dono da FK: grava care_groups.patient_id
+        group.setPatient(patient);
+        groupRepository.flush();
 
-        for (DiseaseType diseaseType : dto.diseases()) {
-            DiseaseEntity disease = new DiseaseEntity();
-            disease.setType(diseaseType);
-            patient.addDisease(disease);
-        }
-
-        PatientEntity savedPatient = patientRepository.saveAndFlush(patient);
-
-        group.setPatient(savedPatient);
-        groupRepository.save(group);
-
-        // ✅ PRINT DO MÉTODO CREATE (Usando savedPatient)
-        System.out.println("💾 [CREATE] DOENÇAS SALVAS NO BANCO: " + savedPatient.getDiseases().size());
-        savedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
-
-        return mapToResponseDTO(
-                savedPatient,
-                group.getId());
+        return PatientMapper.toResponse(patient, group.getId());
     }
 
     @Transactional(readOnly = true)
-    public PatientResponseDTO getPatientByGroup(
-            UserEntity userLogado) {
+    public PatientResponseDTO getPatientByGroup(UserEntity userLogado) {
 
         GroupEntity group = findGroupByUser(userLogado);
 
         PatientEntity patient = group.getPatient();
 
         if (patient == null) {
-            throw new IllegalArgumentException(
+            throw new ResourceNotFoundException(
                     "Nenhum paciente cadastrado para este grupo.");
         }
 
-        return mapToResponseDTO(
-                patient,
-                group.getId());
+        return PatientMapper.toResponse(patient, group.getId());
     }
 
     @Transactional
@@ -108,86 +77,38 @@ public class PatientService {
         GroupEntity group = findGroupByUser(userLogado);
 
         PatientEntity patient = patientRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Paciente não encontrado com o ID fornecido."));
 
         if (group.getPatient() == null || !group.getPatient().getId().equals(patient.getId())) {
-            throw new IllegalArgumentException(
+            throw new AccessDeniedException(
                     "Você não tem permissão para alterar este paciente.");
         }
 
-        patient.setName(dto.name());
-        patient.setBirthDate(dto.birthDate());
-        patient.setImportantDescription(dto.importantDescription());
+        PatientMapper.applyUpdate(patient, dto);
 
-        if (dto.strokes() != null) {
-            patient.getStrokes().clear();
-            for (var strokeDTO : dto.strokes()) {
-                StrokeEntity stroke = new StrokeEntity();
-                stroke.setStrokeType(strokeDTO.strokeType());
-                stroke.setStrokeDate(strokeDTO.strokeDate());
-                patient.addStroke(stroke);
-            }
-        }
+        patientRepository.flush(); // INSERT/UPDATE/DELETE de AVCs e doenças
 
-        for (DiseaseType diseaseType : dto.diseases()) {
-            DiseaseEntity disease = new DiseaseEntity();
-            disease.setType(diseaseType);
-            patient.addDisease(disease);
-        }
-
-        PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
-
-        System.out.println("💾 [UPDATE] DOENÇAS ATUALIZADAS NO BANCO: " + updatedPatient.getDiseases().size());
-        updatedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
-
-        return mapToResponseDTO(
-                updatedPatient,
-                group.getId());
+        return PatientMapper.toResponse(patient, group.getId());
     }
 
+    /**
+     * SEMPRE recarrega o grupo dentro da transação atual.
+     *
+     * Antes: usava userLogado.getGroup(). O userLogado vem do SecurityFilter, que
+     * o carrega fora de transação (open-in-view=false); seu "group" é um proxy
+     * LAZY desanexado, e qualquer acesso (ex.: group.getPatient()) lança
+     * LazyInitializationException -> HTTP 500.
+     */
     private GroupEntity findGroupByUser(UserEntity userLogado) {
-        if (userLogado.getGroup() != null) {
-            return userLogado.getGroup();
+
+        if (userLogado == null || userLogado.getId() == null) {
+            throw new AccessDeniedException("Usuário autenticado não identificado.");
         }
 
-        return groupRepository.findByLeader(userLogado)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
+        return groupRepository
+                .findByLeaderIdOrMembersUserId(userLogado.getId(), userLogado.getId())
+                .orElseThrow(() -> new GroupNotFoundException(
                         "Usuário não está vinculado a um grupo."));
-    }
-
-    private PatientResponseDTO mapToResponseDTO(
-            PatientEntity patient,
-            Long groupId) {
-
-        List<StrokeResponseDTO> strokes = patient.getStrokes() == null
-                ? Collections.emptyList()
-                : patient.getStrokes()
-                        .stream()
-                        .map(stroke -> new StrokeResponseDTO(
-                                stroke.getId(),
-                                stroke.getStrokeType(),
-                                stroke.getStrokeDate()))
-                        .toList();
-
-        List<DiseaseResponseDTO> diseases = patient.getDiseases() == null
-                ? Collections.emptyList()
-                : patient.getDiseases()
-                        .stream()
-                        .map(disease -> new DiseaseResponseDTO(
-                                disease.getId(),
-                                disease.getType()))
-                        .toList();
-
-        return new PatientResponseDTO(
-                patient.getId(),
-                patient.getName(),
-                patient.getBirthDate(),
-                patient.getImportantDescription(),
-                strokes,
-                diseases,
-                groupId);
     }
 }

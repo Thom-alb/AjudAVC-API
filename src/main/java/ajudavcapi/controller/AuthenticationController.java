@@ -36,7 +36,6 @@ import ajudavcapi.service.UserService;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.Collections;
-import org.springframework.http.HttpStatus;
 
 @RestController
 @Tag(name = "Autenticação", description = "Autenticação local, cadastro e login com Google.")

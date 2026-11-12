@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.Hibernate;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
@@ -19,7 +21,6 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,7 +31,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class PatientEntity {
 
     @Id
@@ -46,14 +46,24 @@ public class PatientEntity {
     @Column(name = "important_description", columnDefinition = "TEXT")
     private String importantDescription;
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    /*
+     * Lado "dono" da FK é StrokeEntity.patient / DiseaseEntity.patient.
+     * cascade ALL + orphanRemoval: salvar o paciente salva AVCs e doenças;
+     * remover da lista apaga a linha.
+     */
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StrokeEntity> strokes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DiseaseEntity> diseases = new ArrayList<>();
 
+    /*
+     * Lado INVERSO do vínculo (a coluna care_groups.patient_id pertence ao
+     * GroupEntity). Nunca é gravado por aqui; GroupEntity#setPatient mantém os
+     * dois lados sincronizados.
+     */
     @JsonIgnore
-    @OneToOne(mappedBy = "patient")
+    @OneToOne(mappedBy = "patient", fetch = FetchType.LAZY)
     private GroupEntity group;
 
     @Column(name = "created_at", updatable = false)
@@ -76,14 +86,14 @@ public class PatientEntity {
                     "Este AVC já está associado a outro paciente.");
         }
 
-        boolean alreadyAdded = strokes.stream().anyMatch(existing -> existing == stroke ||
-                (existing.getId() != null &&
-                        existing.getId().equals(stroke.getId())));
+        // Comparação por identidade: instâncias novas (id == null) são distintas.
+        boolean alreadyAdded = strokes.stream().anyMatch(existing -> existing == stroke);
 
         if (!alreadyAdded) {
             strokes.add(stroke);
-            stroke.setPatient(this);
         }
+
+        stroke.setPatient(this);
     }
 
     public void removeStroke(StrokeEntity stroke) {
@@ -91,13 +101,9 @@ public class PatientEntity {
             return;
         }
 
-        boolean removed = strokes.removeIf(existing -> existing == stroke ||
-                (stroke.getId() != null &&
-                        stroke.getId().equals(existing.getId())));
-
-        if (removed) {
-            stroke.setPatient(null);
-        }
+        // Com orphanRemoval, basta retirar da coleção; não zeramos patient
+        // (a coluna é NOT NULL e a entidade será excluída no flush).
+        strokes.removeIf(existing -> existing == stroke);
     }
 
     public void addDisease(DiseaseEntity disease) {
@@ -110,14 +116,13 @@ public class PatientEntity {
                     "Esta doença já está associada a outro paciente.");
         }
 
-        boolean alreadyAdded = diseases.stream().anyMatch(existing -> existing == disease ||
-                (existing.getId() != null &&
-                        existing.getId().equals(disease.getId())));
+        boolean alreadyAdded = diseases.stream().anyMatch(existing -> existing == disease);
 
         if (!alreadyAdded) {
             diseases.add(disease);
-            disease.setPatient(this);
         }
+
+        disease.setPatient(this);
     }
 
     public void removeDisease(DiseaseEntity disease) {
@@ -125,13 +130,27 @@ public class PatientEntity {
             return;
         }
 
-        boolean removed = diseases.removeIf(existing -> existing == disease ||
-                (disease.getId() != null &&
-                        disease.getId().equals(existing.getId())));
-
-        if (removed) {
-            disease.setPatient(null);
-        }
+        diseases.removeIf(existing -> existing == disease);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        Class<?> thisClass = Hibernate.getClass(this);
+        Class<?> otherClass = Hibernate.getClass(o);
+        if (thisClass != otherClass) {
+            return false;
+        }
+        return id != null && id.equals(((PatientEntity) o).getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
+    }
 }

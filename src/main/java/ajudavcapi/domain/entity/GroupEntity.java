@@ -1,11 +1,17 @@
 package ajudavcapi.domain.entity;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.Hibernate;
+
+import ajudavcapi.domain.enums.GroupStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,14 +22,9 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.time.LocalDateTime;
-import ajudavcapi.domain.enums.GroupStatus;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 
 @Entity
 @Table(name = "care_groups")
@@ -31,7 +32,6 @@ import jakarta.persistence.Enumerated;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class GroupEntity {
 
     @Id
@@ -44,11 +44,16 @@ public class GroupEntity {
     @Column(name = "invite_code", nullable = false, unique = true, length = 6)
     private String inviteCode;
 
+    /*
+     * Este lado é o DONO da FK (care_groups.patient_id).
+     * Ao persistir o grupo, o Hibernate persiste o paciente ANTES (para obter o id
+     * da FK) e, em cascata, seus AVCs e doenças.
+     */
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "patient_id", nullable = true, unique = true)
+    @JoinColumn(name = "patient_id", unique = true)
     private PatientEntity patient;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "leader_id", nullable = false)
     private UserEntity leader;
 
@@ -67,9 +72,14 @@ public class GroupEntity {
         this.archivedAt = LocalDateTime.now();
     }
 
-    // Helper method para garantir o vínculo bidirecional com PatientEntity
+    /** Mantém os dois lados do OneToOne sincronizados. */
     public void setPatient(PatientEntity patient) {
+        if (this.patient != null && this.patient != patient) {
+            this.patient.setGroup(null);
+        }
+
         this.patient = patient;
+
         if (patient != null) {
             patient.setGroup(this);
         }
@@ -81,11 +91,11 @@ public class GroupEntity {
         }
 
         boolean alreadyAdded = members.stream()
-                .anyMatch(existing -> existing.getUser() != null
-                        && member.getUser() != null
-                        && existing.getUser().getId() != null
-                        && existing.getUser().getId().equals(
-                                member.getUser().getId()));
+                .anyMatch(existing -> existing == member
+                        || (existing.getUser() != null
+                                && member.getUser() != null
+                                && existing.getUser().getId() != null
+                                && existing.getUser().getId().equals(member.getUser().getId())));
 
         if (!alreadyAdded) {
             members.add(member);
@@ -94,16 +104,37 @@ public class GroupEntity {
     }
 
     public void removeMember(GroupMemberEntity member) {
-        if (member != null && members.remove(member)) {
+        if (member == null) {
+            return;
+        }
+
+        if (members.removeIf(existing -> existing == member)) {
             member.setGroup(null);
         }
     }
 
     public void setInviteCode(String inviteCode) {
-        if (inviteCode != null) {
-            this.inviteCode = inviteCode.toUpperCase().trim();
-        } else {
-            this.inviteCode = null;
+        this.inviteCode = inviteCode != null ? inviteCode.toUpperCase().trim() : null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
+        if (o == null) {
+            return false;
+        }
+        Class<?> thisClass = Hibernate.getClass(this);
+        Class<?> otherClass = Hibernate.getClass(o);
+        if (thisClass != otherClass) {
+            return false;
+        }
+        return id != null && id.equals(((GroupEntity) o).getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 }

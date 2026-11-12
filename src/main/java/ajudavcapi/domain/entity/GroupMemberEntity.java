@@ -2,6 +2,8 @@ package ajudavcapi.domain.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.Hibernate;
+
 import ajudavcapi.domain.enums.GroupRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,7 +17,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,20 +27,19 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class GroupMemberEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Grupo o qual o membro pertencem
-    @ManyToOne(fetch = FetchType.LAZY)
+    // Grupo ao qual o membro pertence
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id", nullable = false)
     private GroupEntity group;
 
-    // O usuario que é membro do grupo
-    @ManyToOne(fetch = FetchType.LAZY)
+    // Usuário que é membro do grupo
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
@@ -56,4 +56,25 @@ public class GroupMemberEntity {
 
     @Column(name = "can_edit_progress", nullable = false)
     private boolean canEditProgress = false;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        Class<?> thisClass = Hibernate.getClass(this);
+        Class<?> otherClass = Hibernate.getClass(o);
+        if (thisClass != otherClass) {
+            return false;
+        }
+        return id != null && id.equals(((GroupMemberEntity) o).getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
+    }
 }
