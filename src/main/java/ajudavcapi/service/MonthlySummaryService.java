@@ -1,6 +1,7 @@
 package ajudavcapi.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,53 +28,100 @@ public class MonthlySummaryService {
     @Autowired
     private GroupRepository groupRepository;
 
-    @Transactional
-    public MonthlySummaryResponseDTO getOrCalculateSummary(Integer month, Integer year, UserEntity userLogado) {
-        GroupEntity group = getUserGroup(userLogado);
-        Long groupId = group.getId();
+    
+@Transactional
+public MonthlySummaryResponseDTO getOrCalculateSummary(
+        Integer month,
+        Integer year,
+        UserEntity userLogado) {
 
-        List<WeeklyProgressEntity> progressList = weeklyProgressRepository.findByGroupIdAndMonthAndYear(groupId, month,
-                year);
+    GroupEntity group = getUserGroup(userLogado);
+    Long groupId = group.getId();
 
-        if (progressList.isEmpty()) {
-            return new MonthlySummaryResponseDTO(null, month, year, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, null, groupId);
+    // Primeiro, procura um resumo já existente no banco.
+    Optional<MonthlySummaryEntity> existing =
+            monthlySummaryRepository.findByGroupIdAndMonthAndYear(
+                    groupId, month, year);
+
+    // Busca as avaliações semanais do período.
+    List<WeeklyProgressEntity> progressList =
+            weeklyProgressRepository.findByGroupIdAndMonthAndYear(
+                    groupId, month, year);
+
+    // Se não houver avaliações, preserva o resumo já existente.
+    if (progressList.isEmpty()) {
+        if (existing.isPresent()) {
+            return mapToDTO(existing.get());
         }
 
-        double avgComm = progressList.stream()
-                .mapToInt(p -> p.getCommunicationScore() != null ? p.getCommunicationScore() : 0).average().orElse(0.0);
-        double avgMob = progressList.stream().mapToInt(p -> p.getMobilityScore() != null ? p.getMobilityScore() : 0)
-                .average().orElse(0.0);
-        double avgMem = progressList.stream().mapToInt(p -> p.getMemoryScore() != null ? p.getMemoryScore() : 0)
-                .average().orElse(0.0);
-
-        int cAnimo = progressList.stream().mapToInt(p -> p.getCountAnimo() == null ? 0 : p.getCountAnimo()).sum();
-        int cFeliz = progressList.stream().mapToInt(p -> p.getCountFeliz() == null ? 0 : p.getCountFeliz()).sum();
-        int cApatia = progressList.stream().mapToInt(p -> p.getCountApatia() == null ? 0 : p.getCountApatia()).sum();
-        int cRaiva = progressList.stream().mapToInt(p -> p.getCountRaiva() == null ? 0 : p.getCountRaiva()).sum();
-        int cTriste = progressList.stream().mapToInt(p -> p.getCountTriste() == null ? 0 : p.getCountTriste()).sum();
-
-        MonthlySummaryEntity summary = monthlySummaryRepository.findByGroupIdAndMonthAndYear(groupId, month, year)
-                .orElseGet(() -> {
-                    MonthlySummaryEntity newEntity = new MonthlySummaryEntity();
-                    newEntity.setGroup(group);
-                    newEntity.setMonth(month);
-                    newEntity.setYear(year);
-                    return newEntity;
-                });
-
-        summary.setAverageCommunication(avgComm);
-        summary.setAverageMobility(avgMob);
-        summary.setAverageMemory(avgMem);
-        summary.setCountAnimo(cAnimo);
-        summary.setCountFeliz(cFeliz);
-        summary.setCountApatia(cApatia);
-        summary.setCountRaiva(cRaiva);
-        summary.setCountTriste(cTriste);
-
-        MonthlySummaryEntity saved = monthlySummaryRepository.save(summary);
-
-        return mapToDTO(saved);
+        return new MonthlySummaryResponseDTO(
+                null, month, year,
+                0.0, 0.0, 0.0,
+                0, 0, 0, 0, 0,
+                null, groupId);
     }
+
+    // Calcula as médias dos indicadores.
+    double avgComm = progressList.stream()
+            .mapToInt(WeeklyProgressEntity::getCommunicationScore)
+            .average()
+            .orElse(0.0);
+
+    double avgMob = progressList.stream()
+            .mapToInt(WeeklyProgressEntity::getMobilityScore)
+            .average()
+            .orElse(0.0);
+
+    double avgMem = progressList.stream()
+            .mapToInt(WeeklyProgressEntity::getMemoryScore)
+            .average()
+            .orElse(0.0);
+
+    // Soma os registros de humor das avaliações semanais.
+    int cAnimo = progressList.stream()
+            .mapToInt(p -> p.getCountAnimo() == null ? 0 : p.getCountAnimo())
+            .sum();
+
+    int cFeliz = progressList.stream()
+            .mapToInt(p -> p.getCountFeliz() == null ? 0 : p.getCountFeliz())
+            .sum();
+
+    int cApatia = progressList.stream()
+            .mapToInt(p -> p.getCountApatia() == null ? 0 : p.getCountApatia())
+            .sum();
+
+    int cRaiva = progressList.stream()
+            .mapToInt(p -> p.getCountRaiva() == null ? 0 : p.getCountRaiva())
+            .sum();
+
+    int cTriste = progressList.stream()
+            .mapToInt(p -> p.getCountTriste() == null ? 0 : p.getCountTriste())
+            .sum();
+
+    // Atualiza o resumo existente ou cria um novo.
+    MonthlySummaryEntity summary = existing.orElseGet(() -> {
+        MonthlySummaryEntity newEntity = new MonthlySummaryEntity();
+        newEntity.setGroup(group);
+        newEntity.setMonth(month);
+        newEntity.setYear(year);
+        return newEntity;
+    });
+
+    summary.setAverageCommunication(avgComm);
+    summary.setAverageMobility(avgMob);
+    summary.setAverageMemory(avgMem);
+
+    summary.setCountAnimo(cAnimo);
+    summary.setCountFeliz(cFeliz);
+    summary.setCountApatia(cApatia);
+    summary.setCountRaiva(cRaiva);
+    summary.setCountTriste(cTriste);
+
+    MonthlySummaryEntity saved = monthlySummaryRepository.save(summary);
+
+    return mapToDTO(saved);
+}
+
 
     @Transactional(readOnly = true)
     public List<MonthlySummaryResponseDTO> getGroupSummaries(UserEntity userLogado) {
