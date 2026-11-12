@@ -1,3 +1,4 @@
+
 package ajudavcapi.service;
 
 import java.util.List;
@@ -18,31 +19,31 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+
     public List<UserEntity> listarUsuarios() {
         return userRepository.findAll();
     }
 
     public UserEntity buscarPorId(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado para o ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Usuário não encontrado para o ID: " + id));
     }
 
     public UserEntity adicionarUsuario(UserRequestDTO user) {
         if (userRepository.existsByEmail(user.email())) {
-            throw new IllegalArgumentException("Este e-mail já está cadastrado.");
+            throw new IllegalArgumentException(
+                    "Este e-mail já está cadastrado.");
         }
 
         UserEntity u = new UserEntity();
         u.setName(user.name());
         u.setEmail(user.email());
-        
-        // Estratégia de diferenciação limpa de fluxo
+
         if (user.password() == null || user.password().isBlank()) {
-            // Conta vinda do Google OAuth2
             u.setPassword(null);
             u.setProvider("GOOGLE");
         } else {
-            // Conta estruturada convencional por credenciais
             u.setPassword(passwordEncoder.encode(user.password()));
             u.setProvider("LOCAL");
         }
@@ -53,38 +54,31 @@ public class UserService {
     public UserEntity atualizarUsuario(Long id, UserRequestDTO dto) {
         UserEntity user = buscarPorId(id);
 
-        if (!user.getEmail().equals(dto.email()) && userRepository.existsByEmail(dto.email())) {
-            throw new IllegalArgumentException("Este e-mail já está em uso.");
+        if (!user.getEmail().equals(dto.email())
+                && userRepository.existsByEmail(dto.email())) {
+            throw new IllegalArgumentException(
+                    "Este e-mail já está em uso.");
         }
 
         user.setName(dto.name());
         user.setEmail(dto.email());
-        
-        // Mantém a flexibilidade para atualizações de dados
-        if (dto.password() == null || dto.password().isBlank()) {
-            user.setPassword(null);
-            user.setProvider("GOOGLE");
-        } else {
-            user.setPassword(passwordEncoder.encode(dto.password()));
-            user.setProvider("LOCAL");
-        }
+
+        // Não alteramos senha nem provedor nesta atualização.
 
         return userRepository.save(user);
     }
 
-    public void deletarUsuario(Long id) {
-        UserEntity user = buscarPorId(id);
-        userRepository.delete(user);
+
+    public UserEntity salvarUsuario(UserEntity user) {
+        return userRepository.save(user);
     }
 
     public Optional<UserEntity> buscarPorEmail(String email) {
         return userRepository.findByEmail(email);
     }
-
-    /**
-     * Método utilitário para persistir alterações diretas em entidades persistidas.
-     */
-    public UserEntity salvarUsuario(UserEntity user) {
-        return userRepository.save(user);
+    
+    public void deletarUsuario(Long id) {
+        UserEntity user = buscarPorId(id);
+        userRepository.delete(user);
     }
 }

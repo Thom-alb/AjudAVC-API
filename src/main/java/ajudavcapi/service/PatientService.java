@@ -18,6 +18,7 @@ import ajudavcapi.domain.entity.StrokeEntity;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.domain.repository.GroupRepository;
 import ajudavcapi.domain.repository.PatientRepository;
+import ajudavcapi.domain.enums.DiseaseType;
 
 @Service
 public class PatientService {
@@ -42,8 +43,7 @@ public class PatientService {
 
         if (group.getPatient() != null) {
             throw new IllegalArgumentException(
-                "Este grupo já possui um paciente cadastrado."
-            );
+                    "Este grupo já possui um paciente cadastrado.");
         }
 
         PatientEntity patient = new PatientEntity();
@@ -61,28 +61,24 @@ public class PatientService {
             }
         }
 
-        if (dto.diseases() != null) {
-            for (Object diseaseObj : dto.diseases()) {
-                DiseaseEntity disease = new DiseaseEntity();
-                String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
-                disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
-                patient.addDisease(disease);
-            }
+        for (DiseaseType diseaseType : dto.diseases()) {
+            DiseaseEntity disease = new DiseaseEntity();
+            disease.setType(diseaseType);
+            patient.addDisease(disease);
         }
 
         PatientEntity savedPatient = patientRepository.saveAndFlush(patient);
 
         group.setPatient(savedPatient);
         groupRepository.save(group);
-        
+
         // ✅ PRINT DO MÉTODO CREATE (Usando savedPatient)
         System.out.println("💾 [CREATE] DOENÇAS SALVAS NO BANCO: " + savedPatient.getDiseases().size());
         savedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
-        
+
         return mapToResponseDTO(
-            savedPatient,
-            group.getId()
-        );
+                savedPatient,
+                group.getId());
     }
 
     @Transactional(readOnly = true)
@@ -95,14 +91,12 @@ public class PatientService {
 
         if (patient == null) {
             throw new IllegalArgumentException(
-                "Nenhum paciente cadastrado para este grupo."
-            );
+                    "Nenhum paciente cadastrado para este grupo.");
         }
 
         return mapToResponseDTO(
-            patient,
-            group.getId()
-        );
+                patient,
+                group.getId());
     }
 
     @Transactional
@@ -115,13 +109,11 @@ public class PatientService {
 
         PatientEntity patient = patientRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(
-                    "Paciente não encontrado com o ID fornecido."
-                ));
+                        "Paciente não encontrado com o ID fornecido."));
 
         if (group.getPatient() == null || !group.getPatient().getId().equals(patient.getId())) {
             throw new IllegalArgumentException(
-                "Você não tem permissão para alterar este paciente."
-            );
+                    "Você não tem permissão para alterar este paciente.");
         }
 
         patient.setName(dto.name());
@@ -134,30 +126,24 @@ public class PatientService {
                 StrokeEntity stroke = new StrokeEntity();
                 stroke.setStrokeType(strokeDTO.strokeType());
                 stroke.setStrokeDate(strokeDTO.strokeDate());
-                patient.addStroke(stroke); 
+                patient.addStroke(stroke);
             }
         }
 
-        if (dto.diseases() != null) {
-            patient.getDiseases().clear();
-            for (Object diseaseObj : dto.diseases()) {
-                DiseaseEntity disease = new DiseaseEntity();
-                String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
-                disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
-                patient.addDisease(disease);
-            }
+        for (DiseaseType diseaseType : dto.diseases()) {
+            DiseaseEntity disease = new DiseaseEntity();
+            disease.setType(diseaseType);
+            patient.addDisease(disease);
         }
 
         PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
 
-        // ✅ CORRIGIDO: PRINT DO MÉTODO UPDATE (Mudado de savedPatient para updatedPatient)
         System.out.println("💾 [UPDATE] DOENÇAS ATUALIZADAS NO BANCO: " + updatedPatient.getDiseases().size());
         updatedPatient.getDiseases().forEach(d -> System.out.println(" - " + d.getType()));
 
         return mapToResponseDTO(
-            updatedPatient,
-            group.getId()
-        );
+                updatedPatient,
+                group.getId());
     }
 
     private GroupEntity findGroupByUser(UserEntity userLogado) {
@@ -169,43 +155,39 @@ public class PatientService {
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
-                    "Usuário não está vinculado a um grupo."
-                ));
+                        "Usuário não está vinculado a um grupo."));
     }
 
     private PatientResponseDTO mapToResponseDTO(
             PatientEntity patient,
             Long groupId) {
 
-        List<StrokeResponseDTO> strokes = patient.getStrokes() == null 
-                ? Collections.emptyList() 
+        List<StrokeResponseDTO> strokes = patient.getStrokes() == null
+                ? Collections.emptyList()
                 : patient.getStrokes()
-                    .stream()
-                    .map(stroke -> new StrokeResponseDTO(
-                        stroke.getId(),
-                        stroke.getStrokeType(),
-                        stroke.getStrokeDate()
-                    ))
-                    .toList();
+                        .stream()
+                        .map(stroke -> new StrokeResponseDTO(
+                                stroke.getId(),
+                                stroke.getStrokeType(),
+                                stroke.getStrokeDate()))
+                        .toList();
 
-        List<DiseaseResponseDTO> diseases = patient.getDiseases() == null 
-                ? Collections.emptyList() 
+        List<DiseaseResponseDTO> diseases = patient.getDiseases() == null
+                ? Collections.emptyList()
                 : patient.getDiseases()
-                    .stream()
-                    .map(disease -> new DiseaseResponseDTO(
-                        disease.getId(),
-                        disease.getType()
-                    ))
-                    .toList();
+                        .stream()
+                        .map(disease -> new DiseaseResponseDTO(
+                                disease.getId(),
+                                disease.getType()))
+                        .toList();
 
         return new PatientResponseDTO(
-            patient.getId(),
-            patient.getName(),
-            patient.getBirthDate(),
-            patient.getImportantDescription(),
-            strokes,
-            diseases,
-            groupId
-        );
+                patient.getId(),
+                patient.getName(),
+                patient.getBirthDate(),
+                patient.getImportantDescription(),
+                strokes,
+                diseases,
+                groupId);
     }
 }

@@ -35,6 +35,7 @@ C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\patient\UpdatePatientDTO.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\stroke\CreateStrokeDTO.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\stroke\StrokeResponseDTO.java
+C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\stroke\UpdateStrokeDTO.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\user\UserRequestDTO.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\user\UserResponseDTO.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\dto\weeklyProgress\CreateWeeklyProgressDTO.java
@@ -52,6 +53,7 @@ C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\enti
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\entity\WeeklyProgressEntity.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\enums\DiseaseType.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\enums\GroupRole.java
+C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\enums\GroupStatus.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\enums\MoodState.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\enums\StrokeType.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\mapper\WeeklyProgressMapper.java
@@ -66,7 +68,11 @@ C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\repo
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\StrokeRepository.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\UserRepository.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\domain\repository\WeeklyProgressRepository.java
+C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\exception\AccessDeniedException.java
+C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\exception\ConflictException.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\exception\GlobalExceptionHandler.java
+C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\exception\GroupNotFoundException.java
+C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\exception\ResourceNotFoundException.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\service\ActivityLogService.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\service\AuthorizationService.java
 C:\Users\thoma\Documents\GitHub\AjudAVC-API\src\main\java\ajudavcapi\service\CalendarEventService.java

@@ -38,12 +38,15 @@ import lombok.Setter;
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
 public class UserEntity implements UserDetails, Serializable {
-	
-	private static final long serialVersionUID = 1L;
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -51,7 +54,8 @@ public class UserEntity implements UserDetails, Serializable {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    // A validação de tamanho mínimo deve residir no seu UserRequestDTO do cadastro tradicional.
+    // A validação de tamanho mínimo deve residir no seu UserRequestDTO do cadastro
+    // tradicional.
     @Column(name = "password", nullable = true)
     private String password;
 
@@ -64,7 +68,7 @@ public class UserEntity implements UserDetails, Serializable {
     private GroupRole role = GroupRole.MEMBER;
 
     public UserEntity(String name, String email, String password, GroupRole role) {
-        this.name = name; 
+        this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
@@ -125,6 +129,6 @@ public class UserEntity implements UserDetails, Serializable {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return this.active;
     }
 }

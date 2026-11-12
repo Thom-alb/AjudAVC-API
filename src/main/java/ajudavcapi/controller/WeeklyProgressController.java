@@ -49,7 +49,7 @@ public class WeeklyProgressController {
             @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
         })
     @PostMapping
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<WeeklyProgressResponseDTO> createProgress(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para CreateWeeklyProgressDTO", required = true) @RequestBody @Valid CreateWeeklyProgressDTO dto,
             @AuthenticationPrincipal UserEntity userLogado,
@@ -89,7 +89,7 @@ public class WeeklyProgressController {
             @ApiResponse(responseCode = "409", description = "Exclusão conflita com regra de negócio")
         })
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LEADER', 'MEMBER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deleteProgress(
             @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
             @AuthenticationPrincipal UserEntity userLogado) {

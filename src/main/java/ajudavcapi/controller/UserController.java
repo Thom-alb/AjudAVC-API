@@ -1,7 +1,6 @@
 
 package ajudavcapi.controller;
 
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
-
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import ajudavcapi.domain.dto.user.UserRequestDTO;
 import ajudavcapi.domain.dto.user.UserResponseDTO;
 import ajudavcapi.domain.entity.UserEntity;
@@ -37,6 +36,15 @@ public class UserController {
 
     private final UserService service;
 
+    @Operation(summary = "Excluir a própria conta", description = "Desativa e anonimiza a conta autenticada, preservando os registros históricos.")
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deletarUsuario(
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        service.deletarUsuario(userLogado.getId());
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "Listar usuários", description = "Lista usuários. Atenção: a implementação atual não mostra restrição explícita por usuário/grupo; proteja este endpoint conforme o modelo de privacidade esperado.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operação concluída com sucesso"),
@@ -45,12 +53,12 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
             @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
-        })
+    })
     @GetMapping
     public ResponseEntity<List<UserResponseDTO>> getTodos() {
         List<UserResponseDTO> lista = service.listarUsuarios().stream()
-            .map(UserResponseDTO::new)
-            .toList();
+                .map(UserResponseDTO::new)
+                .toList();
 
         return ResponseEntity.ok(lista);
     }
@@ -63,9 +71,10 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
             @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
-        })
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> buscarPorId(@Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id) {
+    public ResponseEntity<UserResponseDTO> buscarPorId(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id) {
         UserEntity user = service.buscarPorId(id);
         return ResponseEntity.ok(new UserResponseDTO(user));
     }
@@ -78,11 +87,13 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
             @ApiResponse(responseCode = "404", description = "Grupo ou recurso relacionado não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
-        })
+    })
     @PostMapping
-    public ResponseEntity<UserResponseDTO> cadastrar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UserRequestDTO", required = true) @RequestBody @Valid UserRequestDTO dto, UriComponentsBuilder uriBuilder) {
+    public ResponseEntity<UserResponseDTO> cadastrar(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UserRequestDTO", required = true) @RequestBody @Valid UserRequestDTO dto,
+            UriComponentsBuilder uriBuilder) {
         UserEntity novoUsuario = service.adicionarUsuario(dto);
-        
+
         URI uri = uriBuilder.path("/user/{id}").buildAndExpand(novoUsuario.getId()).toUri();
         return ResponseEntity.created(uri).body(new UserResponseDTO(novoUsuario));
     }
@@ -95,9 +106,11 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
-        })
+    })
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> atualizar(@Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id, @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UserRequestDTO", required = true) @RequestBody @Valid UserRequestDTO dto) {
+    public ResponseEntity<UserResponseDTO> atualizar(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para UserRequestDTO", required = true) @RequestBody @Valid UserRequestDTO dto) {
         UserEntity usuarioAtualizado = service.atualizarUsuario(id, dto);
         return ResponseEntity.ok(new UserResponseDTO(usuarioAtualizado));
     }
@@ -109,9 +122,10 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para excluir o recurso"),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
             @ApiResponse(responseCode = "409", description = "Exclusão conflita com regra de negócio")
-        })
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id) {
+    public ResponseEntity<Void> deletar(
+            @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id) {
         service.deletarUsuario(id);
         return ResponseEntity.noContent().build();
     }

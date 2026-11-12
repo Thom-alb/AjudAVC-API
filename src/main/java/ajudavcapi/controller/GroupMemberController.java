@@ -1,7 +1,6 @@
 
 package ajudavcapi.controller;
 
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -48,7 +47,7 @@ public class GroupMemberController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
             @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
-        })
+    })
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<GroupMemberResponseDTO>> getGroupMembers(
@@ -66,7 +65,7 @@ public class GroupMemberController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
-        })
+    })
     @PutMapping("/{id}/role")
     public ResponseEntity<GroupMemberResponseDTO> updateMemberRole(
             @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
@@ -85,7 +84,7 @@ public class GroupMemberController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
-        })
+    })
     @PutMapping("/{id}/permissions")
     public ResponseEntity<GroupMemberResponseDTO> updateMemberPermissions(
             @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
@@ -101,7 +100,7 @@ public class GroupMemberController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para excluir o recurso"),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
             @ApiResponse(responseCode = "409", description = "Exclusão conflita com regra de negócio")
-        })
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> removeMember(
             @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
@@ -109,5 +108,18 @@ public class GroupMemberController {
 
         groupMemberService.removeMember(id, userLogado);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/transfer-leadership")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Transferir liderança", description = "Transfere a liderança do grupo para outro integrante. "
+            + "Somente o líder atual pode executar esta operação.")
+    public ResponseEntity<GroupMemberResponseDTO> transferLeadership(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupMemberResponseDTO response = groupMemberService.transferLeadership(id, userLogado);
+
+        return ResponseEntity.ok(response);
     }
 }

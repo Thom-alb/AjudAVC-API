@@ -20,6 +20,10 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.time.LocalDateTime;
+import ajudavcapi.domain.enums.GroupStatus;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 @Entity
 @Table(name = "care_groups")
@@ -51,6 +55,18 @@ public class GroupEntity {
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupMemberEntity> members = new ArrayList<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private GroupStatus status = GroupStatus.ACTIVE;
+
+    @Column(name = "archived_at")
+    private LocalDateTime archivedAt;
+
+    public void archive() {
+        this.status = GroupStatus.ARCHIVED;
+        this.archivedAt = LocalDateTime.now();
+    }
+
     // Helper method para garantir o vínculo bidirecional com PatientEntity
     public void setPatient(PatientEntity patient) {
         this.patient = patient;
@@ -59,10 +75,28 @@ public class GroupEntity {
         }
     }
 
-    // Helper method para garantir o vínculo bidirecional com GroupMemberEntity
     public void addMember(GroupMemberEntity member) {
-        members.add(member);
-        member.setGroup(this);
+        if (member == null) {
+            return;
+        }
+
+        boolean alreadyAdded = members.stream()
+                .anyMatch(existing -> existing.getUser() != null
+                        && member.getUser() != null
+                        && existing.getUser().getId() != null
+                        && existing.getUser().getId().equals(
+                                member.getUser().getId()));
+
+        if (!alreadyAdded) {
+            members.add(member);
+            member.setGroup(this);
+        }
+    }
+
+    public void removeMember(GroupMemberEntity member) {
+        if (member != null && members.remove(member)) {
+            member.setGroup(null);
+        }
     }
 
     public void setInviteCode(String inviteCode) {

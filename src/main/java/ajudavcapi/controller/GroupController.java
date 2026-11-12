@@ -1,7 +1,6 @@
 
 package ajudavcapi.controller;
 
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,8 +25,10 @@ import ajudavcapi.domain.dto.group.CreateGroupDTO;
 import ajudavcapi.domain.dto.group.GroupResponseDTO;
 import ajudavcapi.domain.dto.group.JoinGroupDTO;
 import ajudavcapi.domain.dto.group.UpdateGroupDTO;
+import ajudavcapi.domain.dto.groupmember.GroupMemberResponseDTO;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.service.GroupService;
+import ajudavcapi.service.GroupMemberService;
 import jakarta.validation.Valid;
 
 @RestController
@@ -37,8 +38,11 @@ public class GroupController {
 
     private final GroupService groupService;
 
-    public GroupController(GroupService groupService) {
+    private final GroupMemberService groupMemberService;
+
+    public GroupController(GroupService groupService, GroupMemberService groupMemberService) {
         this.groupService = groupService;
+        this.groupMemberService = groupMemberService;
     }
 
     /**
@@ -52,7 +56,7 @@ public class GroupController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
             @ApiResponse(responseCode = "404", description = "Grupo ou recurso relacionado não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito, como e-mail ou associação duplicada")
-        })
+    })
     @PostMapping
     public ResponseEntity<GroupResponseDTO> createGroup(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para CreateGroupDTO", required = true) @RequestBody @Valid CreateGroupDTO dto,
@@ -76,7 +80,7 @@ public class GroupController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para executar a operação"),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
-        })
+    })
     @PutMapping("/{id}")
     public ResponseEntity<GroupResponseDTO> updateGroup(
             @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,
@@ -98,13 +102,31 @@ public class GroupController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
             @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
-        })
+    })
     @PostMapping("/join")
     public ResponseEntity<GroupResponseDTO> joinGroup(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Payload validado para JoinGroupDTO", required = true) @RequestBody @Valid JoinGroupDTO dto,
             @AuthenticationPrincipal UserEntity userLogado) {
 
         GroupResponseDTO response = groupService.joinGroup(dto, userLogado);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Transferir liderança", description = "Transfere a liderança do grupo para outro integrante. Somente o líder atual pode executar esta operação.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liderança transferida com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Somente o líder pode transferir a liderança"),
+            @ApiResponse(responseCode = "404", description = "Integrante não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do grupo")
+    })
+    @PutMapping("/{id}/transfer-leadership")
+    public ResponseEntity<GroupMemberResponseDTO> transferLeadership(
+            @Parameter(description = "ID do vínculo do integrante que receberá a liderança") @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity userLogado) {
+
+        GroupMemberResponseDTO response = groupMemberService.transferLeadership(id, userLogado);
+
         return ResponseEntity.ok(response);
     }
 
@@ -119,13 +141,13 @@ public class GroupController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
             @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
-        })
+    })
     @GetMapping("/me")
     public ResponseEntity<GroupResponseDTO> getMyGroup(
             @AuthenticationPrincipal UserEntity userLogado) {
 
         GroupResponseDTO response = groupService.getMyGroup(userLogado);
-        
+
         if (response == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
@@ -144,7 +166,7 @@ public class GroupController {
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar o recurso"),
             @ApiResponse(responseCode = "404", description = "Recurso ou vínculo não encontrado"),
             @ApiResponse(responseCode = "409", description = "Conflito com o estado atual do recurso")
-        })
+    })
     @GetMapping("/{id}")
     public ResponseEntity<GroupResponseDTO> getGroupById(
             @Parameter(description = "Identificador do recurso na API", example = "1") @PathVariable Long id,

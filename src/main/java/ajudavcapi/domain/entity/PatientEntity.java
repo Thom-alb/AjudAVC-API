@@ -46,21 +46,12 @@ public class PatientEntity {
     @Column(name = "important_description", columnDefinition = "TEXT")
     private String importantDescription;
 
-    @OneToMany(
-            mappedBy = "patient",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true,
-            fetch = FetchType.EAGER 
-        )
-        private List<StrokeEntity> strokes = new ArrayList<>();
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<StrokeEntity> strokes = new ArrayList<>();
 
-        @OneToMany(
-            mappedBy = "patient",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true,
-            fetch = FetchType.EAGER
-        )
-        private List<DiseaseEntity> diseases = new ArrayList<>();
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<DiseaseEntity> diseases = new ArrayList<>();
+
     @JsonIgnore
     @OneToOne(mappedBy = "patient")
     private GroupEntity group;
@@ -75,32 +66,72 @@ public class PatientEntity {
         }
     }
 
-    // Métodos Utilitários para sincronização dos relacionamentos bidirecionais
     public void addStroke(StrokeEntity stroke) {
-        if (stroke != null) {
+        if (stroke == null) {
+            return;
+        }
+
+        if (stroke.getPatient() != null && stroke.getPatient() != this) {
+            throw new IllegalArgumentException(
+                    "Este AVC já está associado a outro paciente.");
+        }
+
+        boolean alreadyAdded = strokes.stream().anyMatch(existing -> existing == stroke ||
+                (existing.getId() != null &&
+                        existing.getId().equals(stroke.getId())));
+
+        if (!alreadyAdded) {
             strokes.add(stroke);
             stroke.setPatient(this);
         }
     }
 
     public void removeStroke(StrokeEntity stroke) {
-        if (stroke != null) {
-            strokes.remove(stroke);
+        if (stroke == null) {
+            return;
+        }
+
+        boolean removed = strokes.removeIf(existing -> existing == stroke ||
+                (stroke.getId() != null &&
+                        stroke.getId().equals(existing.getId())));
+
+        if (removed) {
             stroke.setPatient(null);
         }
     }
 
     public void addDisease(DiseaseEntity disease) {
-        if (disease != null) {
+        if (disease == null) {
+            return;
+        }
+
+        if (disease.getPatient() != null && disease.getPatient() != this) {
+            throw new IllegalArgumentException(
+                    "Esta doença já está associada a outro paciente.");
+        }
+
+        boolean alreadyAdded = diseases.stream().anyMatch(existing -> existing == disease ||
+                (existing.getId() != null &&
+                        existing.getId().equals(disease.getId())));
+
+        if (!alreadyAdded) {
             diseases.add(disease);
             disease.setPatient(this);
         }
     }
 
     public void removeDisease(DiseaseEntity disease) {
-        if (disease != null) {
-            diseases.remove(disease);
+        if (disease == null) {
+            return;
+        }
+
+        boolean removed = diseases.removeIf(existing -> existing == disease ||
+                (disease.getId() != null &&
+                        disease.getId().equals(existing.getId())));
+
+        if (removed) {
             disease.setPatient(null);
         }
     }
+
 }

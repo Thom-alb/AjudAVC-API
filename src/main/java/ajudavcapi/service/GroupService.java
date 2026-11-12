@@ -16,249 +16,246 @@ import ajudavcapi.domain.entity.StrokeEntity;
 import ajudavcapi.domain.entity.UserEntity;
 import ajudavcapi.domain.entity.DiseaseEntity;
 import ajudavcapi.domain.enums.GroupRole;
+import ajudavcapi.exception.GroupNotFoundException;
 import ajudavcapi.domain.repository.GroupRepository;
+import ajudavcapi.domain.repository.UserRepository;
 
 @Service
 public class GroupService {
 
-    private final GroupRepository groupRepository;
+        private final GroupRepository groupRepository;
+        private final UserRepository userRepository;
 
-    private static final String CHARACTERS =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-    private static final SecureRandom RANDOM =
-            new SecureRandom();
+        private static final SecureRandom RANDOM = new SecureRandom();
 
-    public GroupService(GroupRepository groupRepository) {
-        this.groupRepository = groupRepository;
-    }
+        public GroupService(
+                        GroupRepository groupRepository,
+                        UserRepository userRepository) {
+                this.groupRepository = groupRepository;
+                this.userRepository = userRepository;
+        }
 
-    @Transactional
-    public GroupResponseDTO createGroup(
-            CreateGroupDTO dto,
-            UserEntity leader) {
+        @Transactional
+        public GroupResponseDTO createGroup(
+                        CreateGroupDTO dto,
+                        UserEntity leader) {
 
-        GroupEntity group = new GroupEntity();
-
-        group.setName(dto.name());
-        group.setLeader(leader);
-        group.setInviteCode(generateInviteCode());
-
-        if (dto.patient() != null) {
-
-            PatientEntity patient = new PatientEntity();
-
-            patient.setName(dto.patient().name().trim());
-            patient.setBirthDate(dto.patient().birthDate());
-            patient.setImportantDescription(
-                    dto.patient().importantDescription()
-            );
-
-            if (dto.patient().strokes() != null) {
-
-                for (ajudavcapi.domain.dto.stroke.CreateStrokeDTO strokeDTO
-                        : dto.patient().strokes()) {
-
-                    StrokeEntity stroke = new StrokeEntity();
-
-                    stroke.setStrokeType(
-                            strokeDTO.strokeType()
-                    );
-
-                    stroke.setStrokeDate(
-                            strokeDTO.strokeDate()
-                    );
-
-                    patient.addStroke(stroke); 
+                if (leader == null || leader.getId() == null) {
+                        throw new IllegalArgumentException("Usuário autenticado não identificado.");
                 }
-            }
 
-    
-            if (dto.patient().diseases() != null) {
-                for (Object diseaseObj : dto.patient().diseases()) {
-                    DiseaseEntity disease = new DiseaseEntity();
-                    String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
-                    disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
-                    
-                    patient.addDisease(disease);
+                UserEntity managedLeader = userRepository.findById(leader.getId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Líder não encontrado."));
+
+                if (managedLeader.getGroup() != null) {
+                        throw new IllegalArgumentException(
+                                        "O usuário já está associado a um grupo.");
                 }
-            }
-            patient.setGroup(group);
-            group.setPatient(patient);
+
+                GroupEntity group = new GroupEntity();
+
+                group.setName(dto.name());
+                group.setLeader(managedLeader);
+                managedLeader.setGroup(group);
+                group.setInviteCode(generateInviteCode());
+
+                if (dto.patient() != null) {
+
+                        PatientEntity patient = new PatientEntity();
+
+                        patient.setName(dto.patient().name().trim());
+                        patient.setBirthDate(dto.patient().birthDate());
+                        patient.setImportantDescription(
+                                        dto.patient().importantDescription());
+
+                        if (dto.patient().strokes() != null) {
+
+                                for (ajudavcapi.domain.dto.stroke.CreateStrokeDTO strokeDTO : dto.patient().strokes()) {
+
+                                        StrokeEntity stroke = new StrokeEntity();
+
+                                        stroke.setStrokeType(
+                                                        strokeDTO.strokeType());
+
+                                        stroke.setStrokeDate(
+                                                        strokeDTO.strokeDate());
+
+                                        patient.addStroke(stroke);
+                                }
+                        }
+
+                        if (dto.patient().diseases() != null) {
+                                for (Object diseaseObj : dto.patient().diseases()) {
+                                        DiseaseEntity disease = new DiseaseEntity();
+                                        String diseaseStr = String.valueOf(diseaseObj).trim().toUpperCase();
+                                        disease.setType(ajudavcapi.domain.enums.DiseaseType.valueOf(diseaseStr));
+
+                                        patient.addDisease(disease);
+                                }
+                        }
+                        patient.setGroup(group);
+                        group.setPatient(patient);
+                }
+
+                GroupMemberEntity leaderMember = new GroupMemberEntity();
+
+                leaderMember.setUser(managedLeader);
+                leaderMember.setRole(GroupRole.LEADER);
+
+                group.addMember(leaderMember);
+
+                GroupEntity savedGroup = groupRepository.save(group);
+
+                return new GroupResponseDTO(savedGroup);
         }
 
-        GroupMemberEntity leaderMember =
-                new GroupMemberEntity();
+        @Transactional
+        public GroupResponseDTO updateGroup(
+                        Long id,
+                        UpdateGroupDTO dto,
+                        UserEntity user) {
 
-        leaderMember.setUser(leader);
-        leaderMember.setRole(GroupRole.LEADER);
+                if (user == null || user.getId() == null) {
+                        throw new IllegalArgumentException(
+                                        "Usuário autenticado não identificado.");
+                }
 
-        group.addMember(leaderMember);
+                if (dto == null || dto.name() == null || dto.name().isBlank()) {
+                        throw new IllegalArgumentException(
+                                        "O nome do grupo é obrigatório.");
+                }
 
-        GroupEntity savedGroup =
-                groupRepository.save(group);
+                GroupEntity group = groupRepository.findById(id)
+                                .orElseThrow(() -> new GroupNotFoundException(
+                                                "Grupo não encontrado para o ID especificado."));
 
-        return new GroupResponseDTO(savedGroup);
-    }
+                if (group.getLeader() == null
+                                || !group.getLeader().getId().equals(user.getId())) {
 
-    @Transactional
-    public GroupResponseDTO updateGroup(
-            Long id,
-            UpdateGroupDTO dto,
-            UserEntity user) {
+                        throw new org.springframework.security.access.AccessDeniedException(
+                                        "Apenas o líder pode alterar o nome do grupo.");
+                }
 
-        GroupEntity group = groupRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(
-                        "Grupo não encontrado para o ID especificado."
-                ));
+                group.setName(dto.name().trim());
 
-        boolean isMemberOrLeader = group.getLeader().getId().equals(user.getId())
-                || group.getMembers().stream()
-                        .anyMatch(m -> m.getUser().getId().equals(user.getId()));
+                GroupEntity updatedGroup = groupRepository.save(group);
 
-        if (!isMemberOrLeader) {
-            throw new RuntimeException(
-                    "Acesso negado: você não tem permissão para alterar este grupo."
-            );
+                return new GroupResponseDTO(updatedGroup);
         }
 
-        group.setName(dto.name());
+        @Transactional
+        public GroupResponseDTO joinGroup(
+                        JoinGroupDTO dto,
+                        UserEntity user) {
 
-        if (dto.patient() != null && group.getPatient() != null) {
-            PatientEntity patient = group.getPatient();
-            patient.setName(dto.patient().name().trim());
-            patient.setBirthDate(dto.patient().birthDate());
-            patient.setImportantDescription(
-                    dto.patient().importantDescription()
-            );
+                if (user == null || user.getId() == null) {
+                        throw new IllegalArgumentException(
+                                        "Usuário autenticado não identificado.");
+                }
+
+                UserEntity managedUser = userRepository.findById(user.getId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Usuário não encontrado."));
+
+                if (managedUser.getGroup() != null) {
+                        throw new IllegalArgumentException(
+                                        "O usuário já está associado a um grupo.");
+                }
+
+                String inviteCode = dto.inviteCode().trim().toUpperCase();
+
+                GroupEntity group = groupRepository
+                                .findByInviteCode(inviteCode)
+                                .orElseThrow(() -> new GroupNotFoundException(
+                                                "Código de convite inválido ou grupo não encontrado."));
+
+                boolean alreadyMember = group.getMembers().stream()
+                                .anyMatch(member -> member.getUser().getId().equals(managedUser.getId()));
+
+                if (alreadyMember) {
+                        throw new IllegalArgumentException(
+                                        "O usuário já faz parte deste grupo.");
+                }
+
+                GroupMemberEntity newMember = new GroupMemberEntity();
+                newMember.setUser(managedUser);
+                newMember.setRole(GroupRole.MEMBER);
+
+                group.addMember(newMember);
+                managedUser.setGroup(group);
+
+                GroupEntity savedGroup = groupRepository.save(group);
+
+                return new GroupResponseDTO(savedGroup);
         }
 
-        GroupEntity updatedGroup = groupRepository.save(group);
+        @Transactional(readOnly = true)
+        public GroupResponseDTO getMyGroup(UserEntity user) {
 
-        return new GroupResponseDTO(updatedGroup);
-    }
+                if (user == null || user.getId() == null) {
+                        throw new IllegalArgumentException(
+                                        "Usuário autenticado não identificado.");
+                }
 
-    @Transactional
-    public GroupResponseDTO joinGroup(
-            JoinGroupDTO dto,
-            UserEntity user) {
+                GroupEntity group = groupRepository
+                                .findByLeaderIdOrMembersUserId(
+                                                user.getId(),
+                                                user.getId())
+                                .orElseThrow(() -> new GroupNotFoundException(
+                                                "O usuário não pertence a nenhum grupo de cuidado."));
 
-        GroupEntity group =
-                groupRepository
-                        .findByInviteCode(dto.inviteCode())
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Código de convite inválido ou grupo não encontrado."
-                                )
-                        );
-
-        boolean alreadyMember =
-                group.getMembers()
-                        .stream()
-                        .anyMatch(m ->
-                                m.getUser()
-                                        .getId()
-                                        .equals(user.getId())
-                        );
-
-        if (alreadyMember) {
-            throw new RuntimeException(
-                    "O usuário já faz parte deste grupo."
-            );
+                return new GroupResponseDTO(group);
         }
 
-        GroupMemberEntity newMember =
-                new GroupMemberEntity();
+        @Transactional(readOnly = true)
+        public GroupResponseDTO getGroupById(
+                        Long id,
+                        UserEntity user) {
 
-        newMember.setUser(user);
-        newMember.setRole(GroupRole.MEMBER);
+                GroupEntity group = groupRepository.findById(id)
+                                .orElseThrow(() -> new GroupNotFoundException(
+                                                "Grupo não encontrado para o ID especificado."));
 
-        group.addMember(newMember);
+                if (user == null || user.getId() == null) {
+                        throw new IllegalArgumentException(
+                                        "Usuário autenticado não identificado.");
+                }
 
-        GroupEntity savedGroup = groupRepository.save(group);
+                boolean isMemberOrLeader = group.getLeader() != null
+                                && group.getLeader().getId().equals(user.getId())
+                                || group.getMembers().stream()
+                                                .anyMatch(member -> member.getUser().getId().equals(user.getId()));
 
-        return new GroupResponseDTO(savedGroup);
-    }
+                if (!isMemberOrLeader) {
+                        throw new IllegalArgumentException(
+                                        "Você não possui acesso a este grupo.");
+                }
 
-    @Transactional(readOnly = true)
-    public GroupResponseDTO getMyGroup(
-            UserEntity user) {
-
-        GroupEntity group =
-                groupRepository
-                        .findByLeaderIdOrMembersUserId(
-                                user.getId(),
-                                user.getId()
-                        )
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "O usuário não pertence a nenhum grupo de cuidado."
-                                )
-                        );
-
-        return new GroupResponseDTO(group);
-    }
-
-    @Transactional(readOnly = true)
-    public GroupResponseDTO getGroupById(
-            Long id,
-            UserEntity user) {
-
-        GroupEntity group =
-                groupRepository.findById(id)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Grupo não encontrado para o ID especificado."
-                                )
-                        );
-
-        boolean isMemberOrLeader =
-                group.getLeader()
-                        .getId()
-                        .equals(user.getId())
-                ||
-                group.getMembers()
-                        .stream()
-                        .anyMatch(m ->
-                                m.getUser()
-                                        .getId()
-                                        .equals(user.getId())
-                        );
-
-        if (!isMemberOrLeader) {
-            throw new RuntimeException(
-                    "Acesso negado: você não pertence a este grupo."
-            );
+                return new GroupResponseDTO(group);
         }
 
-        return new GroupResponseDTO(group);
-    }
+        private String generateInviteCode() {
 
-    private String generateInviteCode() {
+                String code;
 
-        String code;
+                do {
+                        StringBuilder sb = new StringBuilder(6);
 
-        do {
-            StringBuilder sb =
-                    new StringBuilder(6);
+                        for (int i = 0; i < 6; i++) {
 
-            for (int i = 0; i < 6; i++) {
+                                sb.append(
+                                                CHARACTERS.charAt(
+                                                                RANDOM.nextInt(
+                                                                                CHARACTERS.length())));
+                        }
 
-                sb.append(
-                        CHARACTERS.charAt(
-                                RANDOM.nextInt(
-                                        CHARACTERS.length()
-                                )
-                        )
-                );
-            }
+                        code = sb.toString();
 
-            code = sb.toString();
+                } while (groupRepository.existsByInviteCode(code));
 
-        } while (
-                groupRepository.existsByInviteCode(code)
-        );
-
-        return code;
-    }
+                return code;
+        }
 }
